@@ -3,6 +3,9 @@ import react from '@vitejs/plugin-react'
 import path from "path"
 import tailwindcss from "@tailwindcss/vite"
 import svgr from "vite-plugin-svgr";
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 // https://vite.dev/config/
 
@@ -12,6 +15,14 @@ import rollupNodePolyfills from 'rollup-plugin-node-polyfills';
 
 export default defineConfig({
   plugins: [
+    // Must run before Vite's internal browser-external handler
+    {
+      name: 'buffer-polyfill',
+      enforce: 'pre' as const,
+      resolveId(id: string) {
+        if (id === 'buffer') return require.resolve('buffer');
+      },
+    },
     react(),
     tailwindcss(),
     svgr()
@@ -19,7 +30,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      buffer: 'buffer',
     },
   },
   optimizeDeps: {
@@ -29,9 +39,7 @@ export default defineConfig({
         global: 'globalThis',
       },
       plugins: [
-        NodeGlobalsPolyfillPlugin({
-          buffer: true
-        }),
+        NodeGlobalsPolyfillPlugin({ buffer: true }),
         NodeModulesPolyfillPlugin()
       ]
     }

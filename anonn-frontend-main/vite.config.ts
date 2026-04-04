@@ -23,6 +23,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
+    include: ['buffer'],
     esbuildOptions: {
       define: {
         global: 'globalThis',

@@ -159,7 +159,7 @@ export function encryptMessage(
   groupKey: Uint8Array
 ): { content: string; nonce: string } {
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-  const messageBytes = encodeUTF8(plaintext);
+  const messageBytes = decodeUTF8(plaintext);
   const ciphertext = nacl.secretbox(messageBytes, nonce, groupKey);
   return {
     content: encodeBase64(ciphertext),
@@ -180,7 +180,7 @@ export function decryptMessage(
   const nonce = decodeBase64(nonceBase64);
   const plaintext = nacl.secretbox.open(ciphertext, nonce, groupKey);
   if (!plaintext) return null;
-  return decodeUTF8(plaintext);
+  return encodeUTF8(plaintext);
 }
 
 // ─── localStorage key names ───────────────────────────────────────────────────

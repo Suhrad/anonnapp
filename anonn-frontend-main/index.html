@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>Anonn - Professional Community & Reviews</title>
+    <script>
+      (function() {
+        try {
+          // Always use light theme - remove any dark class
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } catch (e) {
+          // Default to light theme on error
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">    
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

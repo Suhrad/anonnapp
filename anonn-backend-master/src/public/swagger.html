@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anonn API Documentation</title>
+    <meta name="description" content="Comprehensive REST API documentation for Anonn - Web3-enabled social and prediction platform">
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #fafafa;
+        }
+
+        /* Custom Header */
+        .custom-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .custom-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .custom-header p {
+            font-size: 0.95rem;
+            opacity: 0.95;
+            margin: 0;
+        }
+
+        .custom-header .version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-left: 1rem;
+        }
+
+        /* Hide default topbar */
+        .topbar {
+            display: none !important;
+        }
+
+        /* Swagger UI Container */
+        #swagger-ui {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Info Section Styling */
+        .swagger-ui .info {
+            margin: 2rem 0;
+        }
+
+        .swagger-ui .info .title {
+            font-size: 2rem;
+            color: #667eea;
+        }
+
+        /* Improved Authorization Button */
+        .swagger-ui .auth-wrapper .authorize {
+            background: #667eea !important;
+            border-color: #667eea !important;
+            transition: all 0.3s ease;
+        }
+
+        .swagger-ui .auth-wrapper .authorize:hover {
+            background: #764ba2 !important;
+            border-color: #764ba2 !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        /* Operation Blocks */
+        .swagger-ui .opblock {
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.2s ease;
+        }
+
+        .swagger-ui .opblock:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Method Colors */
+        .swagger-ui .opblock.opblock-post {
+            border-color: #49cc90;
+            background: rgba(73, 204, 144, 0.05);
+        }
+
+        .swagger-ui .opblock.opblock-get {
+            border-color: #61affe;
+            background: rgba(97, 175, 254, 0.05);
+        }
+
+        .swagger-ui .opblock.opblock-put {
+            border-color: #fca130;
+            background: rgba(252, 161, 48, 0.05);
+        }
+
+        .swagger-ui .opblock.opblock-delete {
+            border-color: #f93e3e;
+            background: rgba(249, 62, 62, 0.05);
+        }
+
+        /* Try it out button */
+        .swagger-ui .try-out__btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .swagger-ui .try-out__btn:hover {
+            background: #764ba2;
+            transform: translateY(-1px);
+        }
+
+        /* Execute button */
+        .swagger-ui .execute-wrapper .btn {
+            background: #49cc90;
+            border-color: #49cc90;
+            transition: all 0.3s ease;
+        }
+
+        .swagger-ui .execute-wrapper .btn:hover {
+            background: #3cb878;
+            border-color: #3cb878;
+            transform: translateY(-1px);
+        }
+
+        /* Response section */
+        .swagger-ui .responses-wrapper {
+            margin-top: 1.5rem;
+        }
+
+        /* Code blocks */
+        .swagger-ui .highlight-code {
+            border-radius: 6px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #764ba2;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+            font-size: 1.2rem;
+            color: #667eea;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            #swagger-ui {
+                padding: 1rem;
+            }
+
+            .custom-header {
+                padding: 1rem;
+            }
+
+            .custom-header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #1a1a1a;
+            }
+
+            .custom-header {
+                background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            }
+
+            #swagger-ui {
+                filter: invert(0.9) hue-rotate(180deg);
+            }
+
+            .custom-header {
+                filter: invert(0.9) hue-rotate(180deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Header -->
+    <div class="custom-header">
+        <h1>
+            🚀 Anonn API Documentation
+            <span class="version">v1.0.0</span>
+        </h1>
+        <p>Web3-enabled social and prediction platform API | 52 endpoints across 10 modules</p>
+    </div>
+
+    <!-- Swagger UI Container -->
+    <div id="swagger-ui">
+        <div class="loading">Loading API Documentation...</div>
+    </div>
+    
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Determine the base URL dynamically
+            const baseUrl = window.location.origin;
+            const specUrl = baseUrl + '/api-docs/swagger.json';
+            
+            // Initialize Swagger UI
+            window.ui = SwaggerUIBundle({
+                url: specUrl,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "BaseLayout",
+                
+                // Enhanced features
+                persistAuthorization: true,          // Remember auth token
+                displayRequestDuration: true,        // Show request timing
+                filter: true,                        // Enable search/filter
+                tryItOutEnabled: true,               // Enable "Try it out" by default
+                syntaxHighlight: {
+                    activate: true,
+                    theme: "monokai"
+                },
+                
+                // Request interceptor for debugging
+                requestInterceptor: (request) => {
+                    console.log('API Request:', request);
+                    return request;
+                },
+                
+                // Response interceptor for debugging
+                responseInterceptor: (response) => {
+                    console.log('API Response:', response);
+                    return response;
+                },
+                
+                // Default model rendering
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 3,
+                
+                // Show extensions
+                showExtensions: true,
+                showCommonExtensions: true,
+                
+                // Validation
+                validatorUrl: null,  // Disable validator badge
+                
+                // Custom request snippets
+                requestSnippetsEnabled: true,
+                requestSnippets: {
+                    generators: {
+                        curl_bash: {
+                            title: "cURL (bash)",
+                            syntax: "bash"
+                        },
+                        curl_powershell: {
+                            title: "cURL (PowerShell)",
+                            syntax: "powershell"
+                        },
+                        curl_cmd: {
+                            title: "cURL (CMD)",
+                            syntax: "bash"
+                        }
+                    },
+                    defaultExpanded: true,
+                    languages: null
+                },
+                
+                // OAuth2 redirect URL
+                oauth2RedirectUrl: window.location.origin + '/api-docs/oauth2-redirect.html',
+                
+                // On complete callback
+                onComplete: () => {
+                    console.log('✅ Swagger UI loaded successfully');
+                    
+                    // Check if there's a stored token
+                    const storedAuth = localStorage.getItem('swagger_auth');
+                    if (storedAuth) {
+                        console.log('🔐 Found stored authentication');
+                    }
+                }
+            });
+
+            // Add custom event listeners
+            document.addEventListener('keydown', (e) => {
+                // Ctrl/Cmd + K to focus filter
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    const filterInput = document.querySelector('.filter-container input');
+                    if (filterInput) filterInput.focus();
+                }
+            });
+        };
+    </script>
+</body>
+</html>

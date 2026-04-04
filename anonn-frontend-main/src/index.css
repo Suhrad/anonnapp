@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+:root,
+html,
+body {
+  background-color: #0a0a0a;
+  font-family: "Overused Grotesk", "Space Mono", system-ui, -apple-system,
+    sans-serif;
+  font-size: 18px; /* Increased base font size for better readability */
+  /* Hide scrollbars globally */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hide scrollbars for WebKit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+  display: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+@keyframes sx-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes sx-shimmer {
+  to { background-position: -200% 0; }
+}
+
+@keyframes sx-bar-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset !important;
+  -webkit-text-fill-color: #525252 !important;
+  caret-color: #525252;
+}

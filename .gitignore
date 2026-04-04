@@ -1,0 +1,10 @@
+.DS_Store
+.claude/
+files (3)/
+11111.png
+32424.png
+full-rgb.jpg
+full-rgb.svg
+node_modules/
+.env
+.env.local

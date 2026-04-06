@@ -164,7 +164,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!nonceRes.ok) {
-        throw new Error("Failed to get nonce from server");
+        let msg = `Server error ${nonceRes.status}`;
+        try { msg = (await nonceRes.json()).message || msg; }
+        catch { const t = await nonceRes.text().catch(() => ''); if (t.includes('ECONNREFUSED') || t.includes('502') || t.includes('503')) msg = 'Backend server is not reachable — make sure it is running on port 8000'; }
+        throw new Error(msg);
       }
 
       const nonceData = (await nonceRes.json()).data;
@@ -185,7 +188,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!verifyRes.ok) {
-        throw new Error("Failed to verify signature");
+        let msg = `Server error ${verifyRes.status}`;
+        try { msg = (await verifyRes.json()).message || msg; }
+        catch { const t = await verifyRes.text().catch(() => ''); if (t.includes('ECONNREFUSED') || t.includes('502') || t.includes('503')) msg = 'Backend server is not reachable — make sure it is running on port 8000'; }
+        throw new Error(msg);
       }
 
       const verifyData = (await verifyRes.json()).data;
@@ -208,7 +214,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!nonceRes.ok) {
-        throw new Error("Failed to get nonce from server");
+        let msg = `Server error ${nonceRes.status}`;
+        try { msg = (await nonceRes.json()).message || msg; }
+        catch { const t = await nonceRes.text().catch(() => ''); if (t.includes('ECONNREFUSED') || t.includes('502') || t.includes('503')) msg = 'Backend server is not reachable — make sure it is running on port 8000'; }
+        throw new Error(msg);
       }
 
       const nonceData = (await nonceRes.json()).data;
@@ -232,7 +241,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!verifyRes.ok) {
-        throw new Error("Failed to verify signature");
+        let msg = `Server error ${verifyRes.status}`;
+        try { msg = (await verifyRes.json()).message || msg; }
+        catch { const t = await verifyRes.text().catch(() => ''); if (t.includes('ECONNREFUSED') || t.includes('502') || t.includes('503')) msg = 'Backend server is not reachable — make sure it is running on port 8000'; }
+        throw new Error(msg);
       }
 
       const verifyData = (await verifyRes.json()).data;

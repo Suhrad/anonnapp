@@ -2,10 +2,13 @@ import Post from '../models/Post.js';
 import Poll from '../models/Poll.js';
 import Comment from '../models/Comment.js';
 import User from '../models/User.js';
+import AnonymousProfile from '../models/AnonymousProfile.js';
+import Notification from '../models/Notification.js';
 import ExternalMarket from '../models/ExternalMarket.js';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/response.js';
 import { createPointEvent } from '../utils/points.js';
 import { PointEventType } from '../models/PointEvent.js';
+import { parseMentions } from '../utils/mentions.js';
 
 /**
  * Post Controller
@@ -518,6 +521,28 @@ export const addComment = async (req, res, next) => {
             }
         } catch (error) { /* non-critical */ }
 
+        // Fire @mention notifications (non-critical)
+        try {
+            const mentionedUsernames = parseMentions(content);
+            for (const username of mentionedUsernames) {
+                if (username === req.anonProfile?.username) continue; // skip self-mentions
+                const mentionedProfile = await AnonymousProfile.findOne({ username });
+                if (!mentionedProfile) continue;
+                const mentionedUser = await User.findOne({ anonymousId: mentionedProfile.anonymousId });
+                if (!mentionedUser) continue;
+                await Notification.create({
+                    recipient: mentionedUser._id,
+                    sender: req.user._id,
+                    type: 'mention',
+                    title: 'You were mentioned',
+                    message: `@${req.anonProfile.username} mentioned you in a comment`,
+                    relatedComment: comment._id,
+                    relatedPost: req.params.id,
+                    actionUrl: `/post/${req.params.id}`,
+                });
+            }
+        } catch (error) { /* non-critical */ }
+
         const updatedUser = await User.findById(req.user._id).select('points');
         const userPoints = updatedUser ? updatedUser.points : 0;
 
@@ -538,6 +563,8 @@ export const addComment = async (req, res, next) => {
  */
 export const getComments = async (req, res, next) => {
     try {
+        const { sort = 'new' } = req.query;
+
         const comments = await Comment.find({
             post: req.params.id,
             parentComment: null,
@@ -549,6 +576,17 @@ export const getComments = async (req, res, next) => {
                 path: 'replies',
                 populate: { path: 'author' }
             });
+
+        if (sort === 'top') {
+            comments.sort((a, b) =>
+                (b.upvotes.length - b.downvotes.length) - (a.upvotes.length - a.downvotes.length)
+            );
+        } else if (sort === 'controversial') {
+            comments.sort((a, b) =>
+                (b.upvotes.length + b.downvotes.length) - (a.upvotes.length + a.downvotes.length)
+            );
+        }
+        // 'new' keeps existing createdAt DESC order from the DB query
 
         return successResponse(res, 200, { comments }, 'Comments retrieved');
 

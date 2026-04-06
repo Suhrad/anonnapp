@@ -334,6 +334,7 @@ export type CommentWithDetails = Comment & {
   };
   userVote?: Vote;
   replies?: CommentWithDetails[];
+  reactions?: Record<string, string[]>;
 };
 
 // Trust voting table for organizations

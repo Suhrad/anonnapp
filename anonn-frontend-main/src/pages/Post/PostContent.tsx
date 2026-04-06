@@ -39,7 +39,7 @@ import type { PostWithDetails } from "@/types";
 import QuotedMarketEmbed from "@/components/markets/QuotedMarketEmbed";
 import { useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, MoreHorizontal, Trash } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import LikeIcon from "@/icons/Post like icon.svg";
 import { apiCall } from "@/lib/api";
@@ -50,6 +50,8 @@ export default function PostContent() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [showComments, _setShowComments] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [commentSort, setCommentSort] = useState<"new" | "top" | "controversial">("new");
+  const commentSortRef = useRef<"new" | "top" | "controversial">("new");
 
   // Get post ID from URL
   const postId = new URLSearchParams(window.location.search).get("id");
@@ -203,6 +205,7 @@ export default function PostContent() {
         params: {
           page,
           limit,
+          sort: commentSortRef.current,
         },
       });
 
@@ -223,6 +226,11 @@ export default function PostContent() {
 
   const queryClient = useQueryClient();
 
+  const handleSortChange = (sort: "new" | "top" | "controversial") => {
+    commentSortRef.current = sort;
+    setCommentSort(sort);
+    refetchComments();
+  };
 
   const deletePost = async () => {
     if (!post) return;
@@ -587,10 +595,25 @@ export default function PostContent() {
                 <CommentForm postId={post.id} onSuccess={refetchComments} />
               </div>
 
-              {/* Comments Count */}
-              <div className="h-[40px] text-center flex justify-center items-center">
+              {/* Comments Count + Sort Toggle */}
+              <div className="h-[40px] flex items-center justify-between px-4">
                 <div className="text-[#525252] text-xs font-medium">
                   [ {comments?.length || 0} COMMENTS ]
+                </div>
+                <div className="flex gap-1">
+                  {(["new", "top", "controversial"] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleSortChange(s)}
+                      className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors
+                        ${commentSort === s
+                          ? "bg-[#525252]/40 text-white"
+                          : "text-[#525252] hover:text-gray-400"
+                        }`}
+                    >
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
                 </div>
               </div>
 

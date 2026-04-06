@@ -129,7 +129,9 @@ const resolveWsBase = (apiUrl: string) => {
   const noApiSuffix = clean.endsWith("/api") ? clean.slice(0, -4) : clean;
   if (noApiSuffix.startsWith("https://")) return `wss://${noApiSuffix.slice("https://".length)}`;
   if (noApiSuffix.startsWith("http://")) return `ws://${noApiSuffix.slice("http://".length)}`;
-  return "ws://localhost:8000";
+  // Relative URL — derive from current page origin
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${window.location.host}`;
 };
 
 const upsertAndSortMessages = (current: ChatMessage[], incoming: ChatMessage) => {

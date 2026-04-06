@@ -10,6 +10,54 @@ import { PointEventType } from '../models/PointEvent.js';
  * Handles comment management (vote, update, delete)
  */
 
+const ALLOWED_REACTIONS = ['👍', '😂', '🔥', '❤️', '🎯', '😮'];
+
+/**
+ * @route   POST /api/comments/:id/react
+ * @desc    Toggle an emoji reaction on a comment
+ * @access  Private
+ */
+export const reactToComment = async (req, res, next) => {
+    try {
+        const { emoji } = req.body;
+        if (!ALLOWED_REACTIONS.includes(emoji)) {
+            return errorResponse(res, 400, 'Invalid reaction');
+        }
+
+        const comment = await Comment.findById(req.params.id);
+        if (!comment || !comment.isActive) {
+            return errorResponse(res, 404, 'Comment not found');
+        }
+
+        const reactions = comment.reactions || new Map();
+        const voters = reactions.get(emoji) || [];
+        const idx = voters.indexOf(req.anonymousId);
+        if (idx === -1) {
+            voters.push(req.anonymousId);
+        } else {
+            voters.splice(idx, 1);
+        }
+
+        if (voters.length === 0) {
+            reactions.delete(emoji);
+        } else {
+            reactions.set(emoji, voters);
+        }
+
+        comment.reactions = reactions;
+        await comment.save();
+
+        return successResponse(
+            res,
+            200,
+            { reactions: Object.fromEntries(comment.reactions) },
+            'Reaction updated'
+        );
+    } catch (error) {
+        next(error);
+    }
+};
+
 /**
  * @route   GET /api/comments
  * @desc    Get comments with filters (e.g. by author)

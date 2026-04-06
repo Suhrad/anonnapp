@@ -1,4 +1,5 @@
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import ReactionBar from "@/components/Comments/ReactionBar";
 import { SvgIcon } from "@/components/SvgIcon";
 import {
   AlertDialog,
@@ -34,7 +35,7 @@ import type { CommentWithDetails } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, MoreHorizontal, Send, Trash, User as UserIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import VoteButtons from "./VoteButtons";
@@ -66,7 +67,32 @@ export default function CommentReply({
   const queryClient = useQueryClient();
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [localReactions, setLocalReactions] = useState<Record<string, string[]>>(
+    comment.reactions ?? {}
+  );
   const maxDepth = 3;
+
+  // Keep local reactions in sync when comment prop changes (e.g. after query refetch)
+  useEffect(() => {
+    setLocalReactions(comment.reactions ?? {});
+  }, [comment.reactions]);
+
+  function highlightMentions(text: string) {
+    return text.split(/(@[a-zA-Z0-9_]+)/g).map((part, i) =>
+      /^@[a-zA-Z0-9_]+$/.test(part) ? (
+        <a
+          key={i}
+          href={`/profile/${part.slice(1)}`}
+          className="text-blue-400 font-medium hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {part}
+        </a>
+      ) : (
+        part
+      )
+    );
+  }
 
   const form = useForm<ReplyData>({
     resolver: zodResolver(replySchema),
@@ -249,10 +275,14 @@ export default function CommentReply({
       {/* Comment Content */}
       <div className="px-9 pb-4">
         <div className="text-[#8E8E93] text-sm leading-relaxed">
-          <MarkdownRenderer
-            content={comment.content}
-            className="text-[#8E8E93] text-sm"
-          />
+          {/(@[a-zA-Z0-9_]+)/.test(comment.content) ? (
+            <p>{highlightMentions(comment.content)}</p>
+          ) : (
+            <MarkdownRenderer
+              content={comment.content}
+              className="text-[#8E8E93] text-sm"
+            />
+          )}
         </div>
       </div>
 
@@ -306,6 +336,13 @@ export default function CommentReply({
           )}
         </div>
       </div>
+
+      {/* Reactions */}
+      <ReactionBar
+        commentId={comment.id}
+        reactions={localReactions}
+        onReactionChange={setLocalReactions}
+      />
 
       {/* Reply Form */}
       {showReplyForm && canReply && (

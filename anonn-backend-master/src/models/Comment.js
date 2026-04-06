@@ -35,6 +35,12 @@ const commentSchema = new mongoose.Schema(
         // Voting — anonymousId strings
         upvotes: [{ type: String }],
         downvotes: [{ type: String }],
+        // Emoji reactions: emoji → [anonymousId, ...]
+        reactions: {
+            type: Map,
+            of: [String],
+            default: {},
+        },
         // Reply count
         replyCount: {
             type: Number,

@@ -32,7 +32,9 @@ const resolveWsBase = (apiUrl: string) => {
     return `wss://${noApiSuffix.slice("https://".length)}`;
   if (noApiSuffix.startsWith("http://"))
     return `ws://${noApiSuffix.slice("http://".length)}`;
-  return "ws://localhost:8000";
+  // Relative URL (e.g. /api/) — derive from the current page's origin
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${proto}//${window.location.host}`;
 };
 
 const getAnonIdFromToken = (token: string): string | null => {

@@ -4,7 +4,8 @@ import {
     voteComment,
     updateComment,
     deleteComment,
-    getComments
+    getComments,
+    reactToComment
 } from '../controllers/commentController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validation.js';
@@ -99,6 +100,8 @@ router.get('/', getComments);
  *         $ref: '#/components/responses/UnauthorizedError'
  */
 router.post('/:id/vote', authenticate, voteLimiter, voteValidation, validate, voteComment);
+
+router.post('/:id/react', authenticate, reactToComment);
 
 /**
  * @swagger

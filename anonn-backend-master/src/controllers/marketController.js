@@ -86,6 +86,14 @@ const fetchPolymarketBySlug = async (slug) => {
     return data[0];
 };
 
+const fetchPolymarketEventBySlug = async (slug) => {
+    const response = await fetch(`${POLYMARKET_BASE_URL}/events?slug=${encodeURIComponent(slug)}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+    return data[0];
+};
+
 const resolvePolymarketImport = async ({ externalId, slug, url, title, description }) => {
     const effectiveSlug = slug || extractPolymarketSlugFromUrl(url || '');
     let raw = null;
@@ -96,6 +104,11 @@ const resolvePolymarketImport = async ({ externalId, slug, url, title, descripti
 
     if (!raw && effectiveSlug) {
         raw = await fetchPolymarketBySlug(effectiveSlug);
+    }
+
+    if (!raw && effectiveSlug) {
+        const event = await fetchPolymarketEventBySlug(effectiveSlug);
+        raw = event?.markets?.[0] || event;
     }
 
     if (!raw) {
@@ -507,4 +520,3 @@ export const searchEvents = async (req, res, next) => {
         next(error);
     }
 };
-

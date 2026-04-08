@@ -15,7 +15,7 @@ export interface VoteState {
 }
 
 export interface VoteParams {
-  targetId: number;
+  targetId: string | number;
   targetType: "post" | "comment" | "poll";
   voteType: "upvote" | "downvote"; // Changed from "up" | "down" to match backend
 }
@@ -49,7 +49,7 @@ function updateVoteValue(
 export function calculateOptimisticVoteUpdate(
   currentState: VoteState,
   voteType: "upvote" | "downvote", // Changed from "up" | "down"
-  targetId: number,
+  targetId: string | number,
   targetType: "post" | "poll" | "comment",
   userId: string
 ): VoteState {
@@ -113,7 +113,7 @@ export function calculateOptimisticVoteUpdate(
  */
 export function updatePostInAllCaches(
   queryClient: QueryClient,
-  targetId: number,
+  targetId: string | number,
   _targetType: "post" | "poll" | "comment",
   updateFn: (item: any) => any
 ) {
@@ -163,7 +163,7 @@ export function updatePostInAllCaches(
  */
 export function invalidateVoteQueries(
   queryClient: QueryClient,
-  targetId: number,
+  targetId: string | number,
   targetType: "post" | "poll" | "comment"
 ) {
   // Invalidate all post-related queries
@@ -200,7 +200,6 @@ export function invalidateVoteQueries(
  */
 export async function submitVote(params: VoteParams): Promise<any> {
   const { targetId, targetType, voteType } = params;
-  console.log("🚀 ~ submitVote ~ targetId:", targetId)
 
   if (targetType === "poll") {
     return await apiCall({
@@ -234,7 +233,7 @@ export async function submitVote(params: VoteParams): Promise<any> {
  */
 export async function cancelVoteQueries(
   queryClient: QueryClient,
-  targetId: number,
+  targetId: string | number,
   targetType: "post" | "poll" | "comment"
 ) {
   // Cancel all post-related queries

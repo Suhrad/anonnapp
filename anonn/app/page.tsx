@@ -60,13 +60,7 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    // Rolling 7-day window from first page load
-    const launchDate = (() => {
-      const t = new Date()
-      t.setDate(t.getDate() + 10)
-      t.setHours(0, 0, 0, 0)
-      return t.getTime()
-    })()
+    const launchDate = new Date("2026-04-16T12:00:00+05:30").getTime()
 
     const calculateCountdown = () => {
       const distance = launchDate - new Date().getTime()
@@ -76,6 +70,13 @@ export default function Home() {
           hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
           minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
           seconds: Math.floor((distance % (1000 * 60)) / 1000),
+        })
+      } else {
+        setCountdown({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
         })
       }
     }
@@ -288,7 +289,31 @@ export default function Home() {
           </svg>
         </button>
 
-        <div className="hidden items-center gap-8 md:flex"></div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Link
+            href="https://addons.mozilla.org/en-US/firefox/addon/anonn-prediction-markets/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="min-w-[112px] rounded-full border border-emerald-300/30 bg-emerald-400/10 px-3 py-2 text-center backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-emerald-400/15 sm:min-w-[124px] sm:px-4"
+            aria-label="Open the Anonn Firefox extension"
+          >
+            <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.24em] text-emerald-200/80 sm:text-[11px]">
+              Extension
+            </p>
+            <p className="mt-1 text-[11px] font-medium leading-none text-foreground/80 sm:text-xs">
+              Live on Firefox
+            </p>
+          </Link>
+
+          <div className="min-w-[112px] rounded-full border border-foreground/20 bg-foreground/10 px-3 py-2 text-center backdrop-blur-md sm:min-w-[124px] sm:px-4">
+            <p className="text-[10px] font-semibold uppercase leading-none tracking-[0.24em] text-foreground/75 sm:text-[11px]">
+              Platform
+            </p>
+            <p className="mt-1 text-[11px] font-medium leading-none text-foreground/55 sm:text-xs">
+              Coming Soon
+            </p>
+          </div>
+        </div>
       </nav>
 
       <div
@@ -306,7 +331,7 @@ export default function Home() {
                 The Anonymous Home for<br className="hidden sm:block" /> Prediction Markets players.
               </h1>
               <p className="animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-300 text-sm leading-relaxed text-foreground/60 sm:text-base md:text-lg">
-                A unified social platform featuring a comprehensive list of tools built for those who follow the action beyond the charts.
+                A unified social platform for discovering market-moving signals, sharing insight, and acting faster.
               </p>
             </div>
 

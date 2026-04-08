@@ -9,6 +9,7 @@ import { Bell, Lock, User, LogOut } from "lucide-react";
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"account" | "notifications" | "privacy">("account");
   const { user, dbProfile, isAuthenticated, logout, refreshProfile } = useAuth();
+  const walletAddress = dbProfile?.walletAddress || user?.walletAddress;
   
   // Local state for toggles based on dbProfile.notificationSettings safely
   const [chatEnabled, setChatEnabled] = useState((dbProfile as any)?.notificationSettings?.chat !== false);
@@ -97,13 +98,14 @@ export default function SettingsPage() {
                     <label className="text-xs text-[#8E8E93] uppercase tracking-wider block mb-1">Connected Wallet</label>
                     <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#525252]/30 p-3">
                       <p className="text-[#E8EAE9] font-spacemono text-sm max-w-[200px] sm:max-w-md truncate">
-                        {dbProfile?.walletAddress || user?.walletAddress || "Not connected"}
+                        {walletAddress || "Not connected"}
                       </p>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleCopy(dbProfile?.walletAddress || user?.walletAddress || "", "Wallet address")}
-                        className="text-[#8E8E93] hover:text-white"
+                        onClick={() => walletAddress && handleCopy(walletAddress, "Wallet address")}
+                        disabled={!walletAddress}
+                        className="text-[#8E8E93] hover:text-white disabled:opacity-50"
                       >
                         Copy
                       </Button>

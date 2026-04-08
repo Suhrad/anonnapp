@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 interface VoteButtonsProps {
-  targetId: number;
+  targetId: string | number;
   targetType: "post" | "comment" | "poll";
   upvotes: number;
   downvotes: number;
@@ -38,7 +38,7 @@ export default function VoteButtons({
   layout: _layout = "vertical",
   showCount = true,
 }: VoteButtonsProps) {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [animatingVote, setAnimatingVote] = useState<"upvote" | "downvote" | null>(
     null
@@ -152,9 +152,14 @@ export default function VoteButtons({
   });
 
   const handleVote = (voteType: "upvote" | "downvote") => {
-    if (voteMutation.isPending) return;
+    if (!isAuthenticated) {
+      toast.warning("Authentication Required", {
+        description: "Please connect your wallet to vote.",
+      });
+      return;
+    }
 
-    console.log("votetype", voteType);
+    if (voteMutation.isPending) return;
     setAnimatingVote(voteType);
     voteMutation.mutate(voteType);
   };

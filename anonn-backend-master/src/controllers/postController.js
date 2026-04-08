@@ -10,6 +10,11 @@ import { createPointEvent } from '../utils/points.js';
 import { PointEventType } from '../models/PointEvent.js';
 import { parseMentions } from '../utils/mentions.js';
 
+const findNotificationRecipientByAnonymousId = async (anonymousId) => {
+    if (!anonymousId) return null;
+    return User.findOne({ anonymousId }).select('_id notificationSettings');
+};
+
 /**
  * Post Controller
  * Handles post CRUD, voting, comments, and filtering
@@ -118,7 +123,7 @@ export const getPosts = async (req, res, next) => {
         }
 
         if (author) {
-            query.author = author;
+            query.anonAuthorId = author;
         }
 
         // HOT algorithm: engagement-weighted time decay (Reddit-style)
@@ -219,7 +224,7 @@ export const getPosts = async (req, res, next) => {
         // If filtering by author, also fetch polls from the same author and combine them
         let allItems = [...postsWithScores];
         if (author) {
-            const pollQuery = { isActive: true, author: author };
+            const pollQuery = { isActive: true, anonAuthorId: author };
             
             if (community) {
                 pollQuery.community = community;
@@ -458,14 +463,31 @@ export const votePost = async (req, res, next) => {
 
         await post.save();
 
+        if (voteType === 'upvote' && !hasUpvoted && !isAuthorVoting) {
+            try {
+                const recipient = await findNotificationRecipientByAnonymousId(postAnonAuthorId);
+                if (recipient) {
+                    await Notification.create({
+                        recipient: recipient._id,
+                        sender: req.user._id,
+                        type: 'post_like',
+                        title: 'Your post got a new upvote',
+                        message: `${req.anonProfile?.username || 'Someone'} upvoted your post`,
+                        relatedPost: post._id,
+                        actionUrl: `/post?id=${post._id}`,
+                    });
+                }
+            } catch (error) { /* non-critical */ }
+        }
+
         // Fetch updated user points
         const updatedUser = await User.findById(req.user._id).select('points');
         const userPoints = updatedUser ? updatedUser.points : 0;
 
         const currentUserVote = post.upvotes.includes(anonId)
-            ? { voteType: 'up' }
+            ? { voteType: 'upvote' }
             : post.downvotes.includes(anonId)
-            ? { voteType: 'down' }
+            ? { voteType: 'downvote' }
             : null;
 
         return successResponse(res, 200, {
@@ -540,6 +562,43 @@ export const addComment = async (req, res, next) => {
                     relatedPost: req.params.id,
                     actionUrl: `/post/${req.params.id}`,
                 });
+            }
+        } catch (error) { /* non-critical */ }
+
+        try {
+            if (post.anonAuthorId !== req.anonymousId) {
+                const postAuthor = await findNotificationRecipientByAnonymousId(post.anonAuthorId);
+                if (postAuthor?.notificationSettings?.comments !== false) {
+                    await Notification.create({
+                        recipient: postAuthor._id,
+                        sender: req.user._id,
+                        type: 'post_comment',
+                        title: 'New comment on your post',
+                        message: `${req.anonProfile?.username || 'Someone'} commented on your post`,
+                        relatedPost: post._id,
+                        relatedComment: comment._id,
+                        actionUrl: `/post?id=${post._id}`,
+                    });
+                }
+            }
+
+            if (parentComment) {
+                const parent = await Comment.findById(parentComment).select('anonAuthorId');
+                if (parent?.anonAuthorId && parent.anonAuthorId !== req.anonymousId) {
+                    const parentAuthor = await findNotificationRecipientByAnonymousId(parent.anonAuthorId);
+                    if (parentAuthor?.notificationSettings?.comments !== false) {
+                        await Notification.create({
+                            recipient: parentAuthor._id,
+                            sender: req.user._id,
+                            type: 'comment_reply',
+                            title: 'New reply to your comment',
+                            message: `${req.anonProfile?.username || 'Someone'} replied to your comment`,
+                            relatedPost: post._id,
+                            relatedComment: comment._id,
+                            actionUrl: `/post?id=${post._id}`,
+                        });
+                    }
+                }
             }
         } catch (error) { /* non-critical */ }
 

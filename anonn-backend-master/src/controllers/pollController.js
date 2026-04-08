@@ -2,9 +2,15 @@ import Poll from '../models/Poll.js';
 import Comment from '../models/Comment.js';
 import User from '../models/User.js';
 import ExternalMarket from '../models/ExternalMarket.js';
+import Notification from '../models/Notification.js';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/response.js';
 import { createPointEvent } from '../utils/points.js';
 import { PointEventType } from '../models/PointEvent.js';
+
+const findNotificationRecipientByAnonymousId = async (anonymousId) => {
+    if (!anonymousId) return null;
+    return User.findOne({ anonymousId }).select('_id notificationSettings');
+};
 
 /**
  * Poll Controller
@@ -58,7 +64,9 @@ export const searchPolls = async (req, res, next) => {
  */
 export const votePollPost = async (req, res, next) => {
     try {
-        const { voteType } = req.body; // 'upvote' or 'downvote'
+        let { voteType } = req.body; // 'upvote' or 'downvote'
+        if (voteType === 'up') voteType = 'upvote';
+        if (voteType === 'down') voteType = 'downvote';
         const poll = await Poll.findById(req.params.id);
 
         if (!poll) {
@@ -136,14 +144,17 @@ export const votePollPost = async (req, res, next) => {
         const updatedUser = await User.findById(req.user._id).select('points');
         const userPoints = updatedUser ? updatedUser.points : 0;
 
+        const currentUserVote = poll.upvotes.includes(anonId)
+            ? { voteType: 'upvote' }
+            : poll.downvotes.includes(anonId)
+                ? { voteType: 'downvote' }
+                : null;
+
         return successResponse(res, 200, {
             voteScore: poll.upvotes.length - poll.downvotes.length,
             upvotes: poll.upvotes.length,
             downvotes: poll.downvotes.length,
-            userVote: {
-                voteType: voteType === 'upvote' && !hasUpvoted ? 'up' :
-                    voteType === 'downvote' && !hasDownvoted ? 'down' : null
-            },
+            userVote: currentUserVote,
             points: userPoints
         }, 'Vote recorded');
 
@@ -345,6 +356,23 @@ export const votePoll = async (req, res, next) => {
         poll.voters.push(req.anonymousId);
 
         await poll.save();
+
+        if (poll.anonAuthorId !== req.anonymousId) {
+            try {
+                const recipient = await findNotificationRecipientByAnonymousId(poll.anonAuthorId);
+                if (recipient?.notificationSettings?.comments !== false) {
+                    await Notification.create({
+                        recipient: recipient._id,
+                        sender: req.user._id,
+                        type: 'poll_vote',
+                        title: 'New vote on your poll',
+                        message: 'Someone voted on your poll',
+                        relatedPoll: poll._id,
+                        actionUrl: `/poll?id=${poll._id}`,
+                    });
+                }
+            } catch (error) { /* non-critical */ }
+        }
 
         const results = poll.getResults();
 

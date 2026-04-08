@@ -1,0 +1,13 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    - cron: '*/14 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render backend
+        run: curl --fail --silent --show-error --max-time 30 https://anonnapp.onrender.com/health

@@ -655,7 +655,12 @@ export default function CreatePostModal({
     console.log("[CreatePostModal] Rendering select step dialog");
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-5xl max-h-screen p-0 bg-[#0a0a0a] border-0 rounded-none [&>button]:hidden" aria-describedby="create-post-dialog-desc">
+        <DialogContent
+          className="max-w-5xl max-h-screen p-0 bg-[#0a0a0a] border-0 rounded-none [&>button]:hidden"
+          aria-describedby="create-post-dialog-desc"
+          onInteractOutside={(event) => event.preventDefault()}
+          onEscapeKeyDown={(event) => event.preventDefault()}
+        >
           <span id="create-post-dialog-desc" className="sr-only">Create a new post or poll. Fill in the required fields and submit.</span>
           <DialogTitle className="sr-only">
             Create Post - Select Type
@@ -724,7 +729,12 @@ export default function CreatePostModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-screen p-0 bg-[#0a0a0a] border-0 rounded-none flex flex-col [&>button]:hidden" aria-describedby="create-post-dialog-desc-main">
+      <DialogContent
+        className="max-w-5xl max-h-screen p-0 bg-[#0a0a0a] border-0 rounded-none flex flex-col [&>button]:hidden"
+        aria-describedby="create-post-dialog-desc-main"
+        onInteractOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+      >
         <span id="create-post-dialog-desc-main" className="sr-only">Create a new post or poll. Fill in the required fields and submit.</span>
         <DialogTitle className="sr-only">
           {postType === "poll" ? "Create Poll" : "Create Post"}

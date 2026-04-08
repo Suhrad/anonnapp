@@ -10,7 +10,6 @@ import { useLayoutData } from "@/context/LayoutDataContext";
 import { apiCall } from "@/lib/api";
 import type { BowlWithStats } from "@/types";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown } from "lucide-react";
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -32,8 +31,6 @@ export default function BowlsPage({
   const { bowls: layoutBowls } = useLayoutData();
   const [searchTerm, setSearchTerm] = useState("");
   const [followingBowls, setFollowingBowls] = useState<Set<string | number>>(new Set());
-  const [selectedCategory, setSelectedCategory] = useState("general");
-  const [sortBy, setSortBy] = useState("popular");
 
   // Use data from LayoutDataContext if available, otherwise fetch
   const { data: fetchedBowls = [], isLoading: bowlsLoading } = useApiQuery<
@@ -104,18 +101,7 @@ export default function BowlsPage({
   const displayBowls =
     propBowls ?? searchBowls ?? bowls ?? [];
 
-  // Sort bowls
-  const sortedBowls = [...displayBowls].sort((a, b) => {
-    if (sortBy === "popular") {
-      return b.memberCount - a.memberCount;
-    } else if (sortBy === "newest") {
-      return (
-        new Date(b.createdAt || 0).getTime() -
-        new Date(a.createdAt || 0).getTime()
-      );
-    }
-    return 0;
-  });
+  const sortedBowls = [...displayBowls].sort((a, b) => b.memberCount - a.memberCount);
 
   // const followMutation = useMutation({
   //   mutationFn: async (bowlId: number) => {
@@ -257,59 +243,6 @@ export default function BowlsPage({
   return (
     <div className="flex max-w-[1400px] mx-auto">
       <div className="flex-1 flex flex-col gap-6 mt-9 min-w-[200px] mx-auto lg:mx-0">
-        {/* Category Tabs */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-[10px] text-xs text-[#525252]">
-            <button
-              onClick={() => setSelectedCategory("general")}
-              className={`px-4 py-4 rounded-full font-medium text-xs transition-all ${selectedCategory === "general"
-                ? "bg-[#E8EAE9]"
-                : "bg-[#1B1C20] hover:bg-[#E8EAE9]"
-                }`}
-            >
-              GENERAL
-            </button>
-            <button
-              onClick={() => setSelectedCategory("industries")}
-              className={`px-4 py-4 rounded-full font-medium text-xs transition-all ${selectedCategory === "industries"
-                ? "bg-[#E8EAE9]"
-                : "bg-[#1B1C20] hover:bg-[#E8EAE9]"
-                }`}
-            >
-              INDUSTRIES
-            </button>
-            <button
-              onClick={() => setSelectedCategory("job-groups")}
-              className={`px-4 py-4 rounded-[58px] font-medium text-xs transition-all ${selectedCategory === "job-groups"
-                ? "bg-[#E8EAE9]"
-                : "bg-[#1B1C20] hover:bg-[#E8EAE9]"
-                }`}
-            >
-              JOB GROUPS
-            </button>
-          </div>
-
-          {/* Sort Dropdown */}
-          <div className="relative w-[145px]">
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="p-4 pr-8 rounded-[58px] bg-[#1B1C20] text-[#525252] text-xs font-medium uppercase tracking-wide border-none focus:outline-none appearance-none cursor-pointer hover:text-gray-300"
-            >
-              <option value="popular" className="bg-[#1a1a1a]">
-                MOST POPULAR
-              </option>
-              <option value="newest" className="bg-[#1a1a1a]">
-                NEWEST
-              </option>
-              <option value="active" className="bg-[#1a1a1a]">
-                MOST ACTIVE
-              </option>
-            </select>
-            <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none" />
-          </div>
-        </div>
-
         {/* Search Bar */}
         <SearchBar
           placeholder="Search different bowls."

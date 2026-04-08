@@ -579,7 +579,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const authenticated = !!(connected && publicKey && authToken);
+  const walletType = getWalletType();
+  const walletAddress = getWalletAddress();
+  const authenticated = !!(authToken && walletType && walletAddress);
 
   const login = useCallback(async () => {
     try {
@@ -684,13 +686,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle 401 errors - token expiration is already handled in refreshProfile
 
   const shapedUser: User | null = useMemo(() => {
-    if (!publicKey) {
+    const activeWalletAddress = walletAddress;
+
+    if (!activeWalletAddress) {
       return null;
     }
 
     if (dbProfile) {
       const userData = {
-        id: dbProfile.id || publicKey.toString(),
+        id: dbProfile.id || activeWalletAddress,
         username: dbProfile.username,
         avatar: dbProfile.avatar,
         bannerUrl: dbProfile.bannerUrl,
@@ -711,7 +715,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         lastActiveAt: dbProfile.lastActiveAt,
         createdAt: dbProfile.createdAt,
         updatedAt: dbProfile.updatedAt,
-        walletAddress: dbProfile.walletAddress || publicKey.toString(),
+        walletAddress: dbProfile.walletAddress || activeWalletAddress,
         isCompanyVerified: dbProfile.isCompanyVerified || false,
       } as User;
 
@@ -720,7 +724,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const now = new Date();
     const minimalUser = {
-      id: publicKey.toString(),
+      id: activeWalletAddress,
       username: undefined,
       avatar: undefined,
       bannerUrl: undefined,
@@ -741,12 +745,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastActiveAt: now,
       createdAt: now,
       updatedAt: now,
-      walletAddress: publicKey.toString(),
+      walletAddress: activeWalletAddress,
       isCompanyVerified: false,
     } as User;
 
     return sanitizeUserData(minimalUser);
-  }, [publicKey, dbProfile]);
+  }, [walletAddress, dbProfile]);
 
   const handleSetDbProfile = useCallback((p: Partial<User>) => {
     setDbProfile((prev: User | null) => {

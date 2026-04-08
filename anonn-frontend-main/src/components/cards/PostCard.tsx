@@ -60,6 +60,7 @@ export default function PostCard({
   onUpdate,
   index = 0,
 }: PostCardProps) {
+  const postId = post.id || (post as any)._id;
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
@@ -84,21 +85,21 @@ export default function PostCard({
     }
     // apiCall extracts 'data' field, so bookmarksData is { bookmarks: { posts: [...], polls: [...] } }
     const posts = bookmarksData?.bookmarks?.posts || [];
-    setIsSaved(posts.some((p: any) => p._id === post.id || p.id === post.id));
-  }, [isAuthenticated, user, post.id, bookmarksData, bookmarksLoading]);
+    setIsSaved(posts.some((p: any) => p._id === postId || p.id === postId));
+  }, [isAuthenticated, user, postId, bookmarksData, bookmarksLoading]);
 
   // === BOOKMARK MUTATION ===
   const bookmarkMutation = useMutation({
     mutationFn: async (shouldSave: boolean) => {
       const endpoint = shouldSave
         ? "users/bookmarks"
-        : `users/bookmarks/${post.id}?type=post`;
+        : `users/bookmarks/${postId}?type=post`;
       const method = shouldSave ? "POST" : "DELETE";
 
       return await apiCall({
         endpoint,
         method,
-        body: shouldSave ? { type: "post", itemId: post.id } : undefined,
+        body: shouldSave ? { type: "post", itemId: postId } : undefined,
       });
     },
 
@@ -182,32 +183,32 @@ export default function PostCard({
       downvotes: post.downvotes,
       userVote: post.userVote,
     });
-  }, [post.upvotes, post.downvotes, post.userVote, post.id]);
+  }, [post.upvotes, post.downvotes, post.userVote, postId]);
 
   const voteMutation = useMutation({
     mutationFn: async (voteType: "upvote" | "downvote") => {
       return await submitVote({
-        targetId: post.id,
+        targetId: postId,
         targetType: "post",
         voteType,
       });
     },
 
     onMutate: async (voteType: "upvote" | "downvote") => {
-      await cancelVoteQueries(queryClient, post.id, "post");
+      await cancelVoteQueries(queryClient, postId, "post");
 
       const previousState = { ...optimisticState };
       const newState = calculateOptimisticVoteUpdate(
         optimisticState,
         voteType,
-        post.id,
+        postId,
         "post",
         user?.id || ""
       );
 
       setOptimisticState(newState);
 
-      updatePostInAllCaches(queryClient, post.id, "post", (item: any) => ({
+      updatePostInAllCaches(queryClient, postId, "post", (item: any) => ({
         ...item,
         upvotes: newState.upvotes,
         downvotes: newState.downvotes,
@@ -221,7 +222,7 @@ export default function PostCard({
       if (context?.previousState) {
         setOptimisticState(context.previousState);
 
-        updatePostInAllCaches(queryClient, post.id, "post", (item: any) => ({
+        updatePostInAllCaches(queryClient, postId, "post", (item: any) => ({
           ...item,
           upvotes: context.previousState.upvotes,
           downvotes: context.previousState.downvotes,
@@ -256,7 +257,7 @@ export default function PostCard({
 
         setOptimisticState(serverState);
 
-        updatePostInAllCaches(queryClient, post.id, "post", (item: any) => ({
+        updatePostInAllCaches(queryClient, postId, "post", (item: any) => ({
           ...item,
           upvotes: serverState.upvotes,
           downvotes: serverState.downvotes,
@@ -266,7 +267,7 @@ export default function PostCard({
     },
 
     onSettled: () => {
-      invalidateVoteQueries(queryClient, post.id, "post");
+      invalidateVoteQueries(queryClient, postId, "post");
       setTimeout(() => setAnimatingVote(null), 300);
       // Note: Removed onUpdate() call to prevent feed reset
       // Optimistic updates already handle the UI changes
@@ -295,18 +296,20 @@ export default function PostCard({
   const handlePollClick = () => {
     if (post.type === "poll") {
       if (!handleAuthRequired("participate in polls")) return;
-      console.log("Poll clicked! Navigating to:", `/poll?id=${post.id}`);
-      setLocation(`/poll?id=${post.id}`);
+      if (!postId) return;
+      setLocation(`/poll?id=${postId}`);
     }
   };
 
   const handlePostClick = () => {
     if (post.type === "poll") {
       if (!handleAuthRequired("participate in polls")) return;
-      setLocation(`/poll?id=${post.id}`);
+      if (!postId) return;
+      setLocation(`/poll?id=${postId}`);
     } else {
       if (!handleAuthRequired("participate in post")) return;
-      setLocation(`/post?id=${post.id}`);
+      if (!postId) return;
+      setLocation(`/post?id=${postId}`);
     }
   };
 
@@ -416,7 +419,7 @@ export default function PostCard({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-48"
+                    className="w-48 border border-[#525252]/30 bg-[#111214] text-[#E8EAE9]"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <DropdownMenuItem
@@ -535,7 +538,7 @@ export default function PostCard({
               handleVote("upvote");
             }}
             disabled={voteMutation.isPending}
-            className={`flex flex-1 justify-center md:justify-start text-center md:text-left md:flex-none items-center gap-2 md:px-6 py-3 border-r-[0.5px] border-[#525252]/30 transition-colors ${displayUserVote?.voteType === "up"
+            className={`flex flex-1 justify-center md:justify-start text-center md:text-left md:flex-none items-center gap-2 md:px-6 py-3 border-r-[0.5px] border-[#525252]/30 transition-colors ${displayUserVote?.voteType === "upvote"
               ? "text-blue-500 bg-blue-500/30"
               : "text-white hover:bg-gray-800/50"
               } ${voteMutation.isPending ? "opacity-75 cursor-not-allowed" : ""}`}
@@ -546,7 +549,7 @@ export default function PostCard({
               <SvgIcon
                 src="@/icons/up-vote.svg"
                 color={
-                  displayUserVote?.voteType === "up"
+                  displayUserVote?.voteType === "upvote"
                     ? "text-blue-500"
                     : "text-white"
                 }
@@ -563,7 +566,7 @@ export default function PostCard({
               handleVote("downvote");
             }}
             disabled={voteMutation.isPending}
-            className={`flex flex-1 justify-center md:justify-start md:flex-none items-center gap-2 md:px-6 py-3 border-r-none md:border-r-[0.5px] border-[#525252]/30 transition-colors ${displayUserVote?.voteType === "down"
+            className={`flex flex-1 justify-center md:justify-start md:flex-none items-center gap-2 md:px-6 py-3 border-r-none md:border-r-[0.5px] border-[#525252]/30 transition-colors ${displayUserVote?.voteType === "downvote"
               ? "text-orange-500 bg-orange-500/30"
               : "text-white hover:bg-gray-800/50"
               } ${voteMutation.isPending ? "opacity-75 cursor-not-allowed" : ""}`}
@@ -574,7 +577,7 @@ export default function PostCard({
               <SvgIcon
                 src="@/icons/down-vote.svg"
                 color={
-                  displayUserVote?.voteType === "down"
+                  displayUserVote?.voteType === "downvote"
                     ? "text-orange-500"
                     : "text-white"
                 }
@@ -598,7 +601,8 @@ export default function PostCard({
             onClick={(e) => {
               e.stopPropagation();
               if (!handleAuthRequired("view comments")) return;
-              setLocation(`/post?id=${post.id}`);
+              if (!postId) return;
+              setLocation(`/post?id=${postId}`);
             }}
             className="flex items-center gap-2 px-4 py-3 text-white hover:bg-gray-800/50 transition-colors"
           >
@@ -658,7 +662,14 @@ export default function PostCard({
               onClick={async (e) => {
                 e.stopPropagation();
                 try {
-                  const res = await fetch(`/api/posts/${post.id}`, {
+                  if (!postId) {
+                    toast.error("Error", {
+                      description: "Unable to resolve this post.",
+                    });
+                    return;
+                  }
+
+                  const res = await fetch(`/api/posts/${postId}`, {
                     method: "DELETE",
                     credentials: "include",
                     headers: {

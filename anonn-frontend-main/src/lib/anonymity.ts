@@ -21,7 +21,6 @@ export function sanitizeUserData(user: any): any {
   const sanitized = { ...user };
   
   delete sanitized.email;
-  delete sanitized.walletAddress;
   delete sanitized.firstName;
   delete sanitized.lastName;
   delete sanitized.companyEmail;
@@ -100,7 +99,6 @@ export function validateAnonymizedData(data: any): boolean {
   
   const sensitiveFields = [
     'email',
-    'walletAddress', 
     'firstName',
     'lastName',
     'companyEmail',
@@ -177,7 +175,6 @@ export function sanitizeFormData(formData: any): any {
   
   // Remove sensitive fields that shouldn't be in forms
   delete sanitized.email;
-  delete sanitized.walletAddress;
   delete sanitized.firstName;
   delete sanitized.lastName;
   delete sanitized.companyEmail;

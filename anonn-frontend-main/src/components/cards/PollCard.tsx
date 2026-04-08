@@ -164,8 +164,7 @@ export default function PollCard({
       const upvotes = typeof responseData.upvotes === 'number' ? responseData.upvotes : (Array.isArray(responseData.upvotes) ? responseData.upvotes.length : 0);
       const downvotes = typeof responseData.downvotes === 'number' ? responseData.downvotes : (Array.isArray(responseData.downvotes) ? responseData.downvotes.length : 0);
       
-      // Handle userVote - backend returns { voteType: 'up' | 'down' | null }
-      // Convert to match the component checks which expect 'up'/'down' (not 'upvote'/'downvote')
+      // Normalize server vote shape to the frontend's shared vote model.
       let userVote: typeof poll.userVote = undefined;
       if (responseData.userVote?.voteType) {
         userVote = {
@@ -173,7 +172,7 @@ export default function PollCard({
           userId: user?.id || '',
           targetId: poll.id,
           targetType: 'poll',
-          voteType: responseData.userVote.voteType as 'up' | 'down', // Backend returns 'up'/'down'
+          voteType: responseData.userVote.voteType as 'upvote' | 'downvote',
           createdAt: null,
         } as typeof poll.userVote;
       }
@@ -479,7 +478,7 @@ export default function PollCard({
               handlePollVote("upvote");
             }}
             disabled={voteMutation.isPending}
-            className={`flex flex-1 justify-center md:justify-start text-center md:text-left md:flex-none items-center gap-2 md:px-6 py-3 border-r-[0.5px] border-[#525252]/30 transition-colors ${poll.userVote?.voteType === "up"
+            className={`flex flex-1 justify-center md:justify-start text-center md:text-left md:flex-none items-center gap-2 md:px-6 py-3 border-r-[0.5px] border-[#525252]/30 transition-colors ${poll.userVote?.voteType === "upvote"
               ? "text-blue-500 bg-blue-500/30"
               : "text-white hover:bg-gray-800/50"
               } ${voteMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -490,7 +489,7 @@ export default function PollCard({
               <SvgIcon
                 src="/icons/up-vote.svg"
                 color={
-                  poll.userVote?.voteType === "up"
+                  poll.userVote?.voteType === "upvote"
                     ? "text-blue-500"
                     : "text-white"
                 }
@@ -508,7 +507,7 @@ export default function PollCard({
               handlePollVote("downvote");
             }}
             disabled={voteMutation.isPending}
-            className={`flex flex-1 justify-center md:justify-start md:flex-none items-center gap-2 md:px-6 py-3 border-r-none md:border-r-[0.5px] border-[#525252]/30 transition-colors  ${poll.userVote?.voteType === "down"
+            className={`flex flex-1 justify-center md:justify-start md:flex-none items-center gap-2 md:px-6 py-3 border-r-none md:border-r-[0.5px] border-[#525252]/30 transition-colors  ${poll.userVote?.voteType === "downvote"
               ? "text-orange-500 bg-orange-500/30"
               : "text-white hover:bg-gray-800/50"
               } ${voteMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -519,7 +518,7 @@ export default function PollCard({
               <SvgIcon
                 src="/icons/down-vote.svg"
                 color={
-                  poll.userVote?.voteType === "down"
+                  poll.userVote?.voteType === "downvote"
                     ? "text-orange-500"
                     : "text-white"
                 }

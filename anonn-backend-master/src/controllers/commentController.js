@@ -1,9 +1,16 @@
 import Comment from '../models/Comment.js';
 import Post from '../models/Post.js';
 import Poll from '../models/Poll.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/response.js';
 import { createPointEvent } from '../utils/points.js';
 import { PointEventType } from '../models/PointEvent.js';
+
+const findNotificationRecipientByAnonymousId = async (anonymousId) => {
+    if (!anonymousId) return null;
+    return User.findOne({ anonymousId }).select('_id notificationSettings');
+};
 
 /**
  * Comment Controller
@@ -97,7 +104,9 @@ export const getComments = async (req, res, next) => {
  */
 export const voteComment = async (req, res, next) => {
     try {
-        const { voteType } = req.body; // 'upvote' or 'downvote'
+        let { voteType } = req.body; // 'upvote' or 'downvote'
+        if (voteType === 'up') voteType = 'upvote';
+        if (voteType === 'down') voteType = 'downvote';
         const comment = await Comment.findById(req.params.id);
 
         if (!comment) {
@@ -190,10 +199,40 @@ export const voteComment = async (req, res, next) => {
 
         await comment.save();
 
+        if (voteType === 'upvote' && !hasUpvoted && !isAuthorVoting) {
+            try {
+                const recipient = await findNotificationRecipientByAnonymousId(commentAuthorId);
+                if (recipient) {
+                    await Notification.create({
+                        recipient: recipient._id,
+                        sender: req.user._id,
+                        type: 'comment_like',
+                        title: 'Your comment got a new upvote',
+                        message: 'Someone upvoted your comment',
+                        relatedComment: comment._id,
+                        relatedPost: comment.post || undefined,
+                        relatedPoll: comment.poll || undefined,
+                        actionUrl: comment.post
+                            ? `/post?id=${comment.post}`
+                            : comment.poll
+                                ? `/poll?id=${comment.poll}`
+                                : undefined,
+                    });
+                }
+            } catch (error) { /* non-critical */ }
+        }
+
+        const currentUserVote = comment.upvotes.includes(anonId)
+            ? { voteType: 'upvote' }
+            : comment.downvotes.includes(anonId)
+                ? { voteType: 'downvote' }
+                : null;
+
         return successResponse(res, 200, {
             voteScore: comment.upvotes.length - comment.downvotes.length,
             upvotes: comment.upvotes.length,
             downvotes: comment.downvotes.length,
+            userVote: currentUserVote,
         }, 'Vote recorded');
 
     } catch (error) {

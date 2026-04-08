@@ -37,10 +37,10 @@ export default function UserProfile() {
         isLoading: isLoadingPosts,
         refetch: refetchPosts,
     } = useApiQuery<UserPostsResponse>({
-        queryKey: ["posts", user?.id, activeTab],
+        queryKey: ["posts", (user as any)?.anonymousId || user?.id, activeTab],
         endpoint: "posts",
-        params: { author: user?.id || "" },
-        enabled: !!user?.id && (activeTab === "posts" || activeTab === "polls"),
+        params: { author: (user as any)?.anonymousId || user?.id || "" },
+        enabled: !!((user as any)?.anonymousId || user?.id) && (activeTab === "posts" || activeTab === "polls"),
         on401: "returnNull",
         retry: false,
         staleTime: 0, // Allow refetching when tab changes
@@ -58,10 +58,10 @@ export default function UserProfile() {
         data: userComments = [],
         isLoading: isLoadingComments,
     } = useApiQuery<CommentWithDetails[]>({
-        queryKey: ["comments", user?.id, activeTab],
+        queryKey: ["comments", (user as any)?.anonymousId || user?.id, activeTab],
         endpoint: "comments",
-        params: { author: user?.id || "" },
-        enabled: !!user?.id && activeTab === "comments",
+        params: { author: (user as any)?.anonymousId || user?.id || "" },
+        enabled: !!((user as any)?.anonymousId || user?.id) && activeTab === "comments",
         on401: "returnNull",
         retry: false,
         staleTime: 0, // Allow refetching when tab changes

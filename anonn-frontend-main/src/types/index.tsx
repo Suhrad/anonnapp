@@ -167,7 +167,7 @@ export type PostWithDetails = Post & {
 export type Vote = {
   id: number;
   userId: string;
-  targetId: number;
+  targetId: string | number;
   targetType: string; // 'post' | 'comment' if you enforce enum later
   voteType: string; // 'upvote' | 'downvote'
   createdAt: Date | null; // defaultNow() may return null on insert

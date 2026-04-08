@@ -4,12 +4,16 @@ import { useApiMutation } from "@/hooks/useApiMutation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Bell, Lock, User, LogOut } from "lucide-react";
+import { Bell, Lock, User, LogOut, Copy, Shield, MessageSquare, Sparkles } from "lucide-react";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"account" | "notifications" | "privacy">("account");
   const { user, dbProfile, isAuthenticated, logout, refreshProfile } = useAuth();
   const walletAddress = dbProfile?.walletAddress || user?.walletAddress;
+  const displayName = dbProfile?.username || user?.username || "Anonymous User";
+  const shortWallet = walletAddress
+    ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-6)}`
+    : "Not connected";
   
   // Local state for toggles based on dbProfile.notificationSettings safely
   const [chatEnabled, setChatEnabled] = useState((dbProfile as any)?.notificationSettings?.chat !== false);
@@ -51,6 +55,48 @@ export default function SettingsPage() {
     { id: "privacy", label: "Privacy & Security", icon: <Lock className="w-4 h-4" /> },
   ];
 
+  const ToggleRow = ({
+    title,
+    description,
+    enabled,
+    onClick,
+    icon,
+  }: {
+    title: string;
+    description: string;
+    enabled: boolean;
+    onClick: () => void;
+    icon: React.ReactNode;
+  }) => (
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#2b2d31] bg-[#14161a] px-5 py-5">
+      <div className="flex items-start gap-4">
+        <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl border border-[#2f3338] bg-[#0d0f12] text-[#E8EAE9]">
+          {icon}
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-[#E8EAE9]">{title}</h3>
+          <p className="max-w-xl text-sm leading-6 text-[#8E8E93]">{description}</p>
+        </div>
+      </div>
+      <button
+        onClick={onClick}
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors ${
+          enabled
+            ? "border-[#7BE0AE] bg-[#b9f0ce]"
+            : "border-[#34363b] bg-[#0c0d10]"
+        }`}
+      >
+        <span
+          className={`inline-block h-5 w-5 rounded-full transition-transform ${
+            enabled
+              ? "translate-x-6 bg-[#079455]"
+              : "translate-x-1 bg-[#5b616b]"
+          }`}
+        />
+      </button>
+    </div>
+  );
+
   if (!isAuthenticated) {
      return (
        <div className="max-w-[800px] mx-auto p-4 text-center mt-20">
@@ -61,146 +107,172 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="max-w-[800px] mx-auto py-8 px-4 h-full flex flex-col">
-      <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+    <div className="mx-auto flex h-full w-full max-w-[1080px] flex-col px-4 py-8">
+      <div className="mb-8 flex flex-col gap-3">
+        <div className="inline-flex w-fit items-center gap-2 rounded-full border border-[#2a2c31] bg-[#101216] px-3 py-1 text-xs uppercase tracking-[0.24em] text-[#8E8E93]">
+          <Shield className="h-3.5 w-3.5" />
+          Settings
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight text-white">Profile controls</h1>
+        <p className="max-w-2xl text-sm leading-6 text-[#8E8E93]">
+          Manage your anonymous identity, notification preferences, and account safety without exposing your wallet or private details.
+        </p>
+      </div>
       
-      <div className="flex flex-col md:flex-row gap-8 flex-1">
+      <div className="grid flex-1 gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
         {/* Sidebar Tabs */}
-        <div className="w-full md:w-64 flex flex-col gap-2 shrink-0">
+        <div className="space-y-4">
+          <Card className="rounded-3xl border border-[#26292e] bg-[#111317] p-4">
+            <div className="mb-4 rounded-2xl border border-[#272a30] bg-[radial-gradient(circle_at_top_left,_rgba(160,217,255,0.12),_transparent_55%),linear-gradient(180deg,#15181d_0%,#0f1115_100%)] p-4">
+              <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-[#2d3138] bg-[#0b0d10] text-base font-semibold text-white">
+                {displayName.charAt(0).toUpperCase()}
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs uppercase tracking-[0.22em] text-[#8E8E93]">Public identity</p>
+                <p className="text-lg font-semibold text-white">{displayName}</p>
+                <p className="text-xs text-[#6f7681]">{shortWallet}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors border-[0.2px] ${
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "bg-[#E8EAE9] text-[#0f1012] border-[#E8EAE9]"
-                  : "bg-[rgba(234,234,234,0.02)] text-[#8E8E93] border-[#525252]/30 hover:bg-[#1B1C20] hover:text-[#E8EAE9]"
+                  ? "border-[#d8dde4] bg-[#f2f4f7] text-[#0f1012]"
+                  : "border-[#2c2f34] bg-[#14161a] text-[#8E8E93] hover:border-[#3a3e45] hover:text-[#E8EAE9]"
               }`}
             >
               {tab.icon}
               {tab.label}
             </button>
           ))}
+            </div>
+          </Card>
         </div>
 
         {/* Content Area */}
-        <div className="flex-1">
+        <div className="min-w-0">
           {activeTab === "account" && (
             <div className="space-y-6">
-              <div>
-                <h2 className="text-xl text-white font-bold mb-4">Your Identity</h2>
-                <Card className="bg-[#1B1C20] border-[#525252]/30 p-6 space-y-4 rounded-sm">
+              <Card className="rounded-3xl border border-[#272a2f] bg-[#111317] p-7">
+                <div className="mb-6 flex items-start justify-between gap-4">
                   <div>
-                    <label className="text-xs text-[#8E8E93] uppercase tracking-wider block mb-1">Public Display Name</label>
-                    <p className="text-[#E8EAE9] font-spacemono">{dbProfile?.username || user?.username || "Anonymous User"}</p>
+                    <h2 className="text-2xl font-semibold text-white">Your identity</h2>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-[#8E8E93]">
+                      These details define your anonymous public persona. Updating them changes how your past and future posts, polls, and comments appear, without revealing your wallet.
+                    </p>
                   </div>
-                  <div>
-                    <label className="text-xs text-[#8E8E93] uppercase tracking-wider block mb-1">Connected Wallet</label>
-                    <div className="flex items-center justify-between bg-[#0a0a0a] border border-[#525252]/30 p-3">
-                      <p className="text-[#E8EAE9] font-spacemono text-sm max-w-[200px] sm:max-w-md truncate">
-                        {walletAddress || "Not connected"}
-                      </p>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                  <div className="hidden rounded-2xl border border-[#2a2e35] bg-[#0d1014] p-3 text-[#9ad5f8] md:block">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-[#2b2e34] bg-[#16191e] p-5">
+                    <p className="mb-2 text-xs uppercase tracking-[0.22em] text-[#707784]">Public display name</p>
+                    <p className="text-lg font-semibold text-[#E8EAE9]">{displayName}</p>
+                    <p className="mt-3 text-sm leading-6 text-[#8E8E93]">
+                      This is the name shown on your posts, polls, replies, and public profile.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[#2b2e34] bg-[#16191e] p-5">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-xs uppercase tracking-[0.22em] text-[#707784]">Connected wallet</p>
+                      <button
                         onClick={() => walletAddress && handleCopy(walletAddress, "Wallet address")}
                         disabled={!walletAddress}
-                        className="text-[#8E8E93] hover:text-white disabled:opacity-50"
+                        className="inline-flex items-center gap-2 rounded-full border border-[#30343b] px-3 py-1 text-xs text-[#D8DDE4] transition-colors hover:border-[#4b5563] hover:text-white disabled:opacity-50"
                       >
+                        <Copy className="h-3.5 w-3.5" />
                         Copy
-                      </Button>
+                      </button>
                     </div>
+                    <p className="break-all font-mono text-sm text-[#E8EAE9]">
+                      {walletAddress || "Not connected"}
+                    </p>
+                    <p className="mt-3 text-sm leading-6 text-[#8E8E93]">
+                      Your wallet stays private in content surfaces. It is used only for authentication and signing.
+                    </p>
                   </div>
-                </Card>
-              </div>
+                </div>
+              </Card>
 
-              <div>
-                <h2 className="text-xl text-[#D92D20] font-bold mb-4">Danger Zone</h2>
-                <Card className="bg-[#1B1C20] border-[#D92D20]/20 p-6 rounded-sm">
-                  <p className="text-[#8E8E93] text-sm mb-4">Disconnect your wallet and clear your current session. You will need to re-authenticate to access your profile and encrypted chats.</p>
-                  <Button 
-                    onClick={logout}
-                    variant="ghost"
-                    className="bg-[#D92D20]/10 text-[#D92D20] hover:bg-[#D92D20] hover:text-white border border-[#D92D20]/20 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Disconnect & Logout
-                  </Button>
-                </Card>
-              </div>
+              <Card className="rounded-3xl border border-[#5a1e24]/40 bg-[linear-gradient(180deg,rgba(85,18,25,0.18),rgba(23,11,14,0.92))] p-7">
+                <div className="mb-5">
+                  <h2 className="text-2xl font-semibold text-[#ffb4b8]">Danger zone</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[#d2a3a7]">
+                    Disconnect your wallet and clear the current session. You’ll need to authenticate again before accessing your profile and encrypted chats.
+                  </p>
+                </div>
+                <Button 
+                  onClick={logout}
+                  variant="ghost"
+                  className="rounded-2xl border border-[#a53a46]/30 bg-[#D92D20]/10 px-5 py-6 text-[#ff7b74] hover:bg-[#D92D20] hover:text-white"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Disconnect & Logout
+                </Button>
+              </Card>
             </div>
           )}
 
           {activeTab === "notifications" && (
             <div className="space-y-6">
-              <h2 className="text-xl text-white font-bold mb-4">Global Notifications</h2>
-              <Card className="bg-[#1B1C20] border-[#525252]/30 p-0 overflow-hidden divide-y divide-[#525252]/30 rounded-sm">
-                
-                <div className="flex flex-wrap gap-4 items-center justify-between p-6">
-                  <div>
-                    <h3 className="text-[#E8EAE9] font-medium">New Chat Messages</h3>
-                    <p className="text-[#8E8E93] text-sm mt-1">Receive toast alerts when someone sends a message in a group you’ve joined.</p>
-                  </div>
-                  <button 
-                    onClick={() => handleToggle("chat", chatEnabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center border-[0.2px] border-[#525252]/30 transition-colors ${
-                      chatEnabled ? "bg-[#ABEFC6]" : "bg-[#0a0a0a]"
-                    }`}
-                  >
-                    <span 
-                      className={`inline-block h-4 w-4 transform transition-transform ${
-                        chatEnabled ? "translate-x-6 bg-[#079455]" : "translate-x-1 bg-[#525252]"
-                      }`} 
-                    />
-                  </button>
-                </div>
-                
-                <div className="flex flex-wrap gap-4 items-center justify-between p-6">
-                  <div>
-                    <h3 className="text-[#E8EAE9] font-medium">Mentions</h3>
-                    <p className="text-[#8E8E93] text-sm mt-1">Get notified when someone @mentions you.</p>
-                  </div>
-                  <button 
-                    onClick={() => handleToggle("mentions", mentionsEnabled)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center border-[0.2px] border-[#525252]/30 transition-colors ${
-                      mentionsEnabled ? "bg-[#ABEFC6]" : "bg-[#0a0a0a]"
-                    }`}
-                  >
-                    <span 
-                      className={`inline-block h-4 w-4 transform transition-transform ${
-                        mentionsEnabled ? "translate-x-6 bg-[#079455]" : "translate-x-1 bg-[#525252]"
-                      }`} 
-                    />
-                  </button>
+              <Card className="rounded-3xl border border-[#272a2f] bg-[#111317] p-7">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-semibold text-white">Global notifications</h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-[#8E8E93]">
+                    Control the alerts that interrupt you. Keep signal high and noise low.
+                  </p>
                 </div>
 
+                <div className="space-y-4">
+                  <ToggleRow
+                    title="New chat messages"
+                    description="Receive toast alerts when someone sends a message in a group you’ve joined."
+                    enabled={chatEnabled}
+                    onClick={() => handleToggle("chat", chatEnabled)}
+                    icon={<MessageSquare className="h-4 w-4" />}
+                  />
+
+                  <ToggleRow
+                    title="Mentions"
+                    description="Get notified when someone @mentions you in a post, poll, or discussion thread."
+                    enabled={mentionsEnabled}
+                    onClick={() => handleToggle("mentions", mentionsEnabled)}
+                    icon={<Bell className="h-4 w-4" />}
+                  />
+                </div>
               </Card>
             </div>
           )}
 
           {activeTab === "privacy" && (
             <div className="space-y-6">
-              <h2 className="text-xl text-white font-bold mb-4">Privacy & Security</h2>
-              <Card className="bg-[#1B1C20] border-[#525252]/30 p-6 space-y-4 rounded-sm">
+              <Card className="rounded-3xl border border-[#272a2f] bg-[#111317] p-7 space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-[#ABEFC6]/10 p-2 border-[0.2px] border-[#ABEFC6]/20">
+                  <div className="rounded-2xl border border-[#2f3a31] bg-[#ABEFC6]/10 p-3">
                     <Lock className="w-5 h-5 text-[#ABEFC6]" />
                   </div>
                   <div>
-                    <h3 className="text-[#E8EAE9] font-medium">End-to-End Encryption</h3>
-                    <p className="text-[#8E8E93] text-sm mt-1 leading-relaxed">
+                    <h2 className="text-2xl font-semibold text-white">Privacy & security</h2>
+                    <p className="mt-2 text-sm leading-6 text-[#8E8E93]">
                       Your chat messages are encrypted locally on your device before they ever reach our servers. We cannot read your private group discussions. Encryption keys are securely bound to your wallet signature.
                     </p>
                   </div>
                 </div>
-              </Card>
 
-              <Card className="bg-[#1B1C20] border-[#525252]/30 p-6 space-y-4 rounded-sm">
-                <div>
-                  <h3 className="text-[#E8EAE9] font-medium mb-1">Anonymous Identifier</h3>
-                  <p className="text-[#8E8E93] text-sm mb-4">This internal ID maps your wallet to your anonymous persona invisibly.</p>
-                  <div className="flex items-center justify-between gap-2 overflow-hidden bg-[#0a0a0a] border border-[#525252]/30 p-2 pl-3">
-                    <span className="text-[#525252] font-spacemono text-xs truncate select-none blur-[4px] hover:blur-none transition-all cursor-help" title="Hover to reveal">
+                <div className="rounded-2xl border border-[#2b2e34] bg-[#16191e] p-5">
+                  <h3 className="mb-1 text-sm font-semibold uppercase tracking-[0.2em] text-[#D8DDE4]">Anonymous identifier</h3>
+                  <p className="mb-4 text-sm leading-6 text-[#8E8E93]">
+                    This internal ID maps your wallet to your anonymous persona invisibly. It powers authorship without exposing your wallet publicly.
+                  </p>
+                  <div className="flex items-center justify-between gap-2 overflow-hidden rounded-2xl border border-[#2b2f34] bg-[#0b0d10] p-3 pl-4">
+                    <span className="truncate font-mono text-xs text-[#69707c] blur-[4px] transition-all hover:blur-none" title="Hover to reveal">
                       {(dbProfile as any)?.anonymousId || "anon_xxxxxxxxxxxxxxxxx"}
                     </span>
                   </div>

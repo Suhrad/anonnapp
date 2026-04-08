@@ -7,14 +7,12 @@ import { useLayoutData } from "@/context/LayoutDataContext";
 import MainLayout from "@/layout/MainLayout";
 import HomePage from "@/pages/Home/home";
 import PollsPage from "@/pages/Polls/polls";
-import OrganizationsPage from "@/pages/Organization/organizations";
 import BowlsPage from "@/pages/Bowls/bowls";
 import NotificationsPage from "@/pages/Notification/Notifications";
 import BookmarksPage from "@/pages/Bookmark/bookmark";
 import ChatPage from "@/pages/Chat/chat";
 import ProfilePage from "@/pages/Profile/profile";
 import UserProfile from "@/pages/Profile/UserProfile";
-import OrganizationContent from "@/pages/Organization/OrganizationContent";
 import PostContent from "@/pages/Post/PostContent";
 import BowlContent from "@/pages/Bowls/BowlContent";
 import SettingsPage from "@/pages/Settings/Setting";
@@ -26,9 +24,19 @@ import MarketContent from "@/pages/Markets/MarketContent";
 import MarketsRightPanel from "@/components/sidebars/MarketsRightPanel";
 import { useState, useEffect } from "react";
 
+function RedirectHome() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    setLocation("/");
+  }, [setLocation]);
+
+  return null;
+}
+
 function RouterWithLayout() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { bowls, organizations } = useLayoutData();
+  const { bowls } = useLayoutData();
 
   ScrollToTop();
 
@@ -36,7 +44,6 @@ function RouterWithLayout() {
   const [isCreatePostModalOpen, setIsCreatePostModalOpen] = useState(false);
   const [createPostType, setCreatePostType] = useState<"text" | "poll" | undefined>();
   const [createPostBowlId, setCreatePostBowlId] = useState<number | undefined>();
-  const [createPostOrganizationId, setCreatePostOrganizationId] = useState<string | number | undefined>();
   const [wasOnCreatePostRoute, setWasOnCreatePostRoute] = useState(false);
 
   const showAuthToast = (action: string) => {
@@ -52,7 +59,6 @@ function RouterWithLayout() {
     if (location === "/create-post") {
       setWasOnCreatePostRoute(true);
       const searchParams = new URLSearchParams(window.location.search);
-      const organizationId = searchParams.get("organizationId");
       const type = searchParams.get("type") as "text" | "poll" | null;
       const bowlId = searchParams.get("bowlId");
 
@@ -63,7 +69,6 @@ function RouterWithLayout() {
       }
 
       setCreatePostType(type || undefined);
-      setCreatePostOrganizationId(organizationId || undefined);
       setCreatePostBowlId(bowlId ? Number(bowlId) : undefined);
       setIsCreatePostModalOpen(true);
     } else if (location !== "/create-post" && wasOnCreatePostRoute) {
@@ -72,7 +77,6 @@ function RouterWithLayout() {
       setIsCreatePostModalOpen(false);
       setCreatePostType(undefined);
       setCreatePostBowlId(undefined);
-      setCreatePostOrganizationId(undefined);
     }
   }, [location, isAuthenticated, isLoading, setLocation, wasOnCreatePostRoute]);
 
@@ -111,11 +115,7 @@ function RouterWithLayout() {
     <>
       <Switch>
         <Route path="/">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <HomePage
               onCreatePost={handleCreatePost}
               onExploreCommunities={() => setLocation("/bowls")}
@@ -125,40 +125,25 @@ function RouterWithLayout() {
         </Route>
 
         <Route path="/polls">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <PollsPage />
           </MainLayout>
         </Route>
 
         <Route path="/poll">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <PollContent />
           </MainLayout>
         </Route>
 
         <Route path="/organizations">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
-            <OrganizationsPage />
-          </MainLayout>
+          <RedirectHome />
         </Route>
 
         <Route path="/markets">
           <MainLayout
             onCreatePost={handleCreatePost}
             bowls={bowls}
-            organizations={organizations}
             rightSidebar={<MarketsRightPanel />}
           >
             <MarketsPage />
@@ -166,81 +151,49 @@ function RouterWithLayout() {
         </Route>
 
         <Route path="/bowls">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <BowlsPage />
           </MainLayout>
         </Route>
 
         <Route path="/notifications">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <NotificationsPage />
           </MainLayout>
         </Route>
 
         <Route path="/bookmarks">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <BookmarksPage />
           </MainLayout>
         </Route>
 
         <Route path="/chat">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-            hideRightSidebar={true}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls} hideRightSidebar={true}>
             <ChatPage />
           </MainLayout>
         </Route>
 
         <Route path="/profile">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <ProfilePage />
           </MainLayout>
         </Route>
 
         <Route path="/u/:username">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <UserProfile />
           </MainLayout>
         </Route>
 
         <Route path="/organizations/:id">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
-            <OrganizationContent />
-          </MainLayout>
+          <RedirectHome />
         </Route>
 
         <Route path="/markets/:id">
           <MainLayout
             onCreatePost={handleCreatePost}
             bowls={bowls}
-            organizations={organizations}
             rightSidebar={<MarketsRightPanel />}
           >
             <MarketContent />
@@ -248,21 +201,13 @@ function RouterWithLayout() {
         </Route>
 
         <Route path="/post">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <PostContent />
           </MainLayout>
         </Route>
 
         <Route path="/bowls/:id">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             <BowlContent />
           </MainLayout>
         </Route>
@@ -271,7 +216,6 @@ function RouterWithLayout() {
         <MainLayout
           onCreatePost={handleCreatePost}
           bowls={bowls}
-          organizations={organizations}
         >
           <PostContent />
         </MainLayout>
@@ -281,18 +225,14 @@ function RouterWithLayout() {
           <MainLayout
             onCreatePost={handleCreatePost}
             bowls={bowls}
-            organizations={organizations}
+            hideRightSidebar={true}
           >
             <SettingsPage />
           </MainLayout>
         </Route>
 
         <Route path="/create-post">
-          <MainLayout
-            onCreatePost={handleCreatePost}
-            bowls={bowls}
-            organizations={organizations}
-          >
+          <MainLayout onCreatePost={handleCreatePost} bowls={bowls}>
             {/* Empty content - modal will be shown */}
             <div />
           </MainLayout>
@@ -313,7 +253,6 @@ function RouterWithLayout() {
           setIsCreatePostModalOpen(false);
           setCreatePostType(undefined);
           setCreatePostBowlId(undefined);
-          setCreatePostOrganizationId(undefined);
           // If we're on /create-post route, navigate away when closing
           if (location === "/create-post") {
             setLocation("/");
@@ -321,7 +260,6 @@ function RouterWithLayout() {
         }}
         initialType={createPostType}
         initialBowlId={createPostBowlId}
-        initialOrganizationId={createPostOrganizationId}
       />
     </>
   );

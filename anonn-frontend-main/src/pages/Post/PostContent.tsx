@@ -265,7 +265,7 @@ export default function PostContent() {
             (key[0] === "posts" ||
               key[0] === "/api/posts" ||
               key[0] === "bowl-posts" ||
-              key[0] === "organization-posts")
+              key[0] === "community-posts")
           );
         },
       });
@@ -279,7 +279,7 @@ export default function PostContent() {
             (key[0] === "posts" ||
               key[0] === "/api/posts" ||
               key[0] === "bowl-posts" ||
-              key[0] === "organization-posts")
+              key[0] === "community-posts")
           );
         },
       });
@@ -326,14 +326,7 @@ export default function PostContent() {
     }
 
     const author = post.author;
-    const username = author?.username || "User";
-
-    // Show company affiliation if user is company verified
-    if (author.isCompanyVerified && author.companyName) {
-      return `${username} from ${author.companyName}`;
-    }
-
-    return username;
+    return author?.username || "User";
   };
 
   if (authLoading) {
@@ -400,7 +393,7 @@ export default function PostContent() {
                 </div>
 
                 <div className="flex items-center gap-4 flex-shrink-0">
-                  {/* Sentiment Badge and Company Logo */}
+                  {/* Sentiment Badge */}
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {(() => {
                       // Check both sentiment and bias fields, normalize to lowercase
@@ -432,16 +425,6 @@ export default function PostContent() {
                       }
                       return null;
                     })()}
-                    {/* Company Logo */}
-                    {post.companyTags && post.companyTags[0]?.logo && (
-                      <div className="h-5 w-5 flex items-center justify-center">
-                        <img
-                          src={post.companyTags[0].logo}
-                          alt="company logo"
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                    )}
                   </div>
 
                   {/* Green Badge with custom icon */}
@@ -586,7 +569,7 @@ export default function PostContent() {
               {/* Abstract Row (example of same layout as screenshot) */}
               <div className="border-x-[0.2px] border-[#525252]/30 flex items-center justify-center p-6">
                 <div className="text-[#525252] text-xs">
-                  Express your view about the company
+                  Join the conversation
                 </div>
               </div>
 

@@ -197,18 +197,8 @@ export default function CommentReply({
   };
 
   const getAuthorDisplay = () => {
-    // if (comment.isAnonymous) {
-    //   return "anonymous";
-    // }
-
     const author = comment.author;
-    const username = author.username || "User";
-
-    if (author.isCompanyVerified && author.companyName) {
-      return `${username} from ${author.companyName}`;
-    }
-
-    return username;
+    return author.username || "User";
   };
 
   return (

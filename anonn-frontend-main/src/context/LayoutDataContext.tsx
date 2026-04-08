@@ -1,14 +1,10 @@
 // src/context/LayoutDataContext.tsx
 import { createContext, useContext } from "react";
 import { useApiQuery } from "@/hooks/useApi";
-import type {
-  Bowl as BowlType,
-  Organization as OrganizationType,
-} from "../types/index";
+import type { Bowl as BowlType } from "../types/index";
 
 interface LayoutData {
   bowls?: BowlType[];
-  organizations?: OrganizationType[];
 }
 
 const LayoutDataContext = createContext<LayoutData>({});
@@ -27,18 +23,5 @@ export const LayoutDataProvider: React.FC<{ children: React.ReactNode }> = ({
     select: (data: any) => data?.bowls || [],
   });
 
-  const { data: organizations } = useApiQuery<OrganizationType[]>({
-    endpoint: "companies",
-    queryKey: ["/api/companies"],
-    retry: false,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    select: (data: any) => data?.companies || [],
-  });
-
-  return (
-    <LayoutDataContext.Provider value={{ bowls, organizations }}>
-      {children}
-    </LayoutDataContext.Provider>
-  );
+  return <LayoutDataContext.Provider value={{ bowls }}>{children}</LayoutDataContext.Provider>;
 };

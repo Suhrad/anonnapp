@@ -162,12 +162,6 @@ export default function LeftSidebar() {
         badge: unseenNotificationCount > 0 ? unseenNotificationCount : 0,
       }] : []),
       {
-        href: "/organizations",
-        label: "COMPANIES",
-        iconPath: "@/icons/Companies icon.svg",
-        isActive: location.startsWith("/organizations"),
-      },
-      {
         href: "/markets",
         label: "MARKETS",
         iconPath: "@/icons/Hot icon.svg",

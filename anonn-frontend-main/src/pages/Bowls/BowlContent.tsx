@@ -354,10 +354,14 @@ export default function BowlContent() {
                 </div>
                 <div className="flex flex-col items-start gap-2 border border-[#525252]/30 w-fit py-5 px-6">
                   <div className="w-16 h-16">
-                    <img src={bowl.creator.avatar || DEFAULT_PROFILE_PICTURE} alt={bowl.creator.username} className="w-full h-full object-cover rounded" />
+                    <img
+                      src={bowl.creator?.avatar || DEFAULT_PROFILE_PICTURE}
+                      alt={bowl.creator?.username || "Unknown admin"}
+                      className="w-full h-full object-cover rounded"
+                    />
                   </div>
                   <span className="text-[#8E8E93] text-xs">
-                    {bowl.creator.username}
+                    {bowl.creator?.username || "Unknown admin"}
                   </span>
                 </div>
               </div>
@@ -495,5 +499,4 @@ export default function BowlContent() {
     </div>
   );
 }
-
 

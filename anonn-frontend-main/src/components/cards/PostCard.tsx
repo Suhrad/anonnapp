@@ -362,7 +362,7 @@ export default function PostCard({
             {getAuthorDisplay()}
           </span>
 
-          {/* Sentiment Badge and Company Logo */}
+          {/* Sentiment Badge */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {(post.sentiment === "positive" || (post as any).bias === "positive") && (
               <div className="p-0.5 md:py-2 flex items-center justify-center">
@@ -379,16 +379,6 @@ export default function PostCard({
                     filter:
                       'brightness(0) saturate(100%) invert(21%) sepia(92%) saturate(2200%) hue-rotate(358deg) brightness(95%) contrast(115%)',
                   }}
-                />
-              </div>
-            )}
-            {/* Company Logo */}
-            {post.companyTags && post.companyTags[0]?.logo && (
-              <div className="h-5 w-5 flex items-center justify-center">
-                <img
-                  src={post.companyTags[0].logo}
-                  alt="company logo"
-                  className="h-full w-full object-contain"
                 />
               </div>
             )}
@@ -698,7 +688,7 @@ export default function PostCard({
                         (key[0] === "posts" ||
                           key[0] === "/api/posts" ||
                           key[0] === "bowl-posts" ||
-                          key[0] === "organization-posts")
+                          key[0] === "community-posts")
                       );
                     },
                   });
@@ -711,7 +701,7 @@ export default function PostCard({
                         (key[0] === "posts" ||
                           key[0] === "/api/posts" ||
                           key[0] === "bowl-posts" ||
-                          key[0] === "organization-posts")
+                          key[0] === "community-posts")
                       );
                     },
                   });

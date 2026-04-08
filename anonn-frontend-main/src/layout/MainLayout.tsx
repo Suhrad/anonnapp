@@ -2,13 +2,12 @@ import Navigation from "@/components/navbar/Navigation";
 import LeftSidebar from "@/components/sidebars/LeftSidebar";
 import RightSidebar from "@/components/sidebars/RightSidebar";
 import GlobalChatListener from "@/components/chat/GlobalChatListener";
-import type { Bowl, Organization } from "@/types";
+import type { Bowl } from "@/types";
 import type { ReactNode } from "react";
 
 interface MainLayoutProps {
   onCreatePost?: (type?: string) => void;
   bowls?: Bowl[];
-  organizations?: Organization[];
   children: ReactNode;
   rightSidebar?: ReactNode;
   hideRightSidebar?: boolean;
@@ -17,7 +16,6 @@ interface MainLayoutProps {
 export default function MainLayout({
   onCreatePost,
   bowls,
-  organizations,
   children,
   rightSidebar,
   hideRightSidebar = false,
@@ -49,7 +47,6 @@ export default function MainLayout({
               {rightSidebar ?? (
                 <RightSidebar
                   bowls={bowls}
-                  organizations={organizations}
                   onCreatePost={onCreatePost || (() => {})}
                 />
               )}

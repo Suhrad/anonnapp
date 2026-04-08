@@ -25,11 +25,6 @@ const activityRows = [
     value: "20",
   },
   {
-    src: "@/icons/Companies icon.svg",
-    text: "rate company",
-    value: "50",
-  },
-  {
     src: "@/icons/Comments icon.svg",
     text: "comment received/given",
     value: "10",

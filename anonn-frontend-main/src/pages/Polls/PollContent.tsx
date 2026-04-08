@@ -62,12 +62,9 @@ interface Poll {
     id: string;
     email: string;
     username?: string;
-    isCompanyVerified?: boolean;
-    companyName?: string;
     avatar?: string;
   };
   bowl?: { id: number; name: string };
-  organization?: { id: number; name: string };
   options: PollOption[];
   totalVotes: number;
   allowMultipleChoices: boolean;
@@ -89,10 +86,6 @@ interface Poll {
     id: number | string;
     displayName: string;
     avatar?: string;
-  };
-  company?: {
-    name: string;
-    logo?: string;
   };
 }
 
@@ -179,27 +172,12 @@ export default function PollContent() {
             displayName: bowl.name || bowl.displayName || "Bowl",
             avatar: bowl.iconUrl || bowl.avatar,
           };
-        } else if (poll.organization) {
-          const org = poll.organization as { id: number; name: string; logo?: string };
-          poll.community = {
-            id: org.id,
-            displayName: org.name,
-            avatar: org.logo,
-          };
         } else {
           poll.community = {
             id: "unknown",
             displayName: "Community",
           }
         }
-      }
-
-      // Polyfill company if missing
-      if (!poll.company && poll.author?.isCompanyVerified) {
-        poll.company = {
-          name: poll.author.companyName || poll.author.username || "Company",
-          logo: poll.author.avatar,
-        };
       }
 
       return poll;
@@ -415,13 +393,7 @@ export default function PollContent() {
   const getAuthorDisplay = () => {
     if (!poll) return "User";
     const author = poll.author;
-    const username = author?.username || "Anonymous";
-
-    if (author.isCompanyVerified && author.companyName) {
-      return `${username} from ${author.companyName}`;
-    }
-
-    return username;
+    return author?.username || "Anonymous";
   };
 
   const getVotePercentage = (voteCount: number) => {
@@ -754,21 +726,10 @@ export default function PollContent() {
             {/* Abstract Row */}
             <div className="border-x-[0.2px] border-[#525252]/30 flex items-center justify-between p-6 ">
               <div className="text-[#525252] text-xs">
-                Express your view about the poll
+                Join the conversation
               </div>
 
               <div className="flex gap-4 md:gap-6 lg:gap-9 items-center">
-                {poll.company && (
-                  <>
-                    <img
-                      src={poll.company.logo}
-                      className="h-5 w-5 object-cover"
-                    />
-                    <span className="text-[#E8EAE9] underline cursor-pointer text-xs">
-                      {poll.company.name}
-                    </span>
-                  </>
-                )}
                 <div className="flex">
                   <div className="flex cursor-pointer items-center justify-center bg-[#ABEFC6] hover:bg-green-300 transition w-[30px] h-[30px]">
                     <img src={PostLikeIcon1} alt="thumbs-up" />

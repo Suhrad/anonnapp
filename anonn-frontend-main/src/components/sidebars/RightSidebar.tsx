@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import WalletConnectButton from "@/components/WalletConnectButton";
 import { zodResolver } from "@hookform/resolvers/zod";
-import type { Bowl, Organization, User } from "@/types";
+import type { Bowl, User } from "@/types";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -30,7 +30,6 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 
 interface RightSidebarProps {
   bowls?: Bowl[];
-  organizations?: Organization[];
   onCreatePost: (type?: string) => void;
 }
 
@@ -49,7 +48,6 @@ type ProfileData = z.infer<typeof profileSchema>;
 
 export default function RightSidebar({
   bowls,
-  organizations,
   onCreatePost,
 }: RightSidebarProps) {
   const {
@@ -116,7 +114,6 @@ export default function RightSidebar({
     location.includes("/settings") ||
     location.includes("/bookmarks");
   const isBowlsPage = location.includes("/bowls");
-  const isOrganizationsPage = location.includes("/organizations");
 
   // React Hook Form for profile editing
   const profileForm = useForm<ProfileData>({
@@ -709,58 +706,6 @@ export default function RightSidebar({
                       {bowl.name?.toLowerCase().replace(/\s+/g, "")}
                     </a>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* COMPANIES Section */}
-      {!isProfilePage && !isOrganizationsPage && (
-        <>
-          <div className="px-4 flex flex-col flex-1 min-h-0">
-            <div className="text-xs py-[8px] text-[#E8EAE9] font-medium mb-4 flex items-center gap-2 uppercase tracking-wide">
-              <SvgIcon src="@/icons/Companies-right icon.svg" />
-              COMPANIES
-            </div>
-            <div className="space-y-4 overflow-y-auto scrollbar-hide flex-1 pb-3">
-              {organizations?.slice(0, 5).map((org, index) => {
-                const orgId = org.id;
-                const trustScores = getTrustPercentage(org);
-                return (
-                  <a
-                    key={orgId || index}
-                    href={`/organizations/${encodeURIComponent(String(orgId))}`}
-                    className="flex items-center justify-between hover:opacity-80 transition-opacity cursor-pointer"
-                  >
-                    <div
-                      className={`w-4 h-4 flex items-center justify-center flex-shrink-0`}
-                    >
-                      {org.logo && <img src={org.logo} className="fit" />}
-                    </div>
-                    <span className="text-xs text-[#8E8E93] truncate">
-                      {org.name}
-                    </span>
-
-                    <div className="flex items-center">
-                      <div className="bg-[#ABEFC6] flex justify-center py-1 w-[30px] text-[#079455] font-semibold text-xs disabled:opacity-50  text-center">
-                        {trustScores.trust}
-                      </div>
-                      <div className="bg-[#FDA29B] flex justify-center py-1 w-[30px] text-[#D92D20] font-semibold text-xs disabled:opacity-50 text-center">
-                        {trustScores.distrust}
-                      </div>
-                    </div>
-
-                    {/* <div className="flex items-center flex-shrink-0">
-                    <div className="px-[7.5px] py-[11px] bg-[#ABEFC6] text-[#079455] text-xs font-bold w-[30px] text-center">
-                      {Math.floor(Math.random() * 40) + 60}
-                    </div>
-                    <div className="px-2 py-2 bg-red-300 text-red-900  text-xs font-bold min-w-[32px] text-center">
-                      {Math.floor(Math.random() * 40) + 30}
-                    </div>
-                  </div> */}
-                  </a>
                 );
               })}
             </div>

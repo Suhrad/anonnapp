@@ -1,4 +1,3 @@
-import CreateOrganizationModal from "@/components/Dialog/CreateOrganizationModal";
 import QuotedMarketEmbed from "@/components/markets/QuotedMarketEmbed";
 import { SvgIcon } from "@/components/SvgIcon";
 import { toast } from "sonner";
@@ -20,7 +19,6 @@ import {
   Italic,
   Link as LinkIcon,
   List,
-  Plus,
   Quote,
   Smile,
   Underline,
@@ -34,7 +32,6 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { apiCall } from "@/lib/api";
 import CloseIcon from "@/icons/x-close.svg";
 import BackIcon from "@/icons/Arrow-left.svg";
-import CompanyIcon from "@/icons/Company icon.png";
 
 interface Bowl {
   id: number;
@@ -42,13 +39,6 @@ interface Bowl {
   description: string;
   category: string;
   icon?: string;
-}
-
-interface Organization {
-  id: number;
-  name: string;
-  description: string;
-  logo?: string | null;
 }
 
 interface PollOption {
@@ -95,7 +85,6 @@ interface CreatePostModalProps {
   onClose: () => void;
   initialType?: "text" | "poll";
   initialBowlId?: number;
-  initialOrganizationId?: string | number;
   /** Pre-attach a market (quote flow — opened from MarketCard "Quote" button) */
   initialMarket?: ImportedMarket;
 }
@@ -105,7 +94,6 @@ export default function CreatePostModal({
   onClose,
   initialType,
   initialBowlId,
-  initialOrganizationId,
   initialMarket,
 }: CreatePostModalProps) {
   console.log("[CreatePostModal] Rendering with isOpen:", isOpen, "initialType:", initialType);
@@ -123,22 +111,13 @@ export default function CreatePostModal({
     { id: "1", text: "" },
     { id: "2", text: "" },
   ]);
-  const [selectedCompany, setSelectedCompany] = useState<Organization | null>(
-    null
-  );
   const [marketUrl, setMarketUrl] = useState("");
   const [importedMarket, setImportedMarket] = useState<ImportedMarket | null>(null);
   const [isImportingMarket, setIsImportingMarket] = useState(false);
   const [showBowlSelector, setShowBowlSelector] = useState(false);
-  const [showCompanySearch, setShowCompanySearch] = useState(false);
   const [bowlSearch, setBowlSearch] = useState("");
-  const [companySearch, setCompanySearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showCreateOrganizationModal, setShowCreateOrganizationModal] =
-    useState(false);
-  const [organizationToCreate, setOrganizationToCreate] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [sentiment, setSentiment] = useState<"positive" | "negative" | "neutral">("neutral");
   
   // Image edit dialog state
   const [editImageDialogOpen, setEditImageDialogOpen] = useState(false);
@@ -180,28 +159,6 @@ export default function CreatePostModal({
     return [];
   }, [bowlsRaw]);
 
-  // Use companies endpoint instead of organizations - use consistent query key to share cache
-  const { data: organizationsRaw } = useApiQuery<Organization[]>({
-    queryKey: ["/api/companies"],
-    endpoint: "companies",
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-  });
-  
-  interface OrganizationsResponse {
-    companies?: Organization[];
-  }
-  
-  const organizations: Organization[] = useMemo(() => {
-    if (Array.isArray(organizationsRaw)) {
-      return organizationsRaw;
-    }
-    if (organizationsRaw && typeof organizationsRaw === 'object' && 'companies' in organizationsRaw) {
-      const response = organizationsRaw as OrganizationsResponse;
-      return Array.isArray(response.companies) ? response.companies : [];
-    }
-    return [];
-  }, [organizationsRaw]);
-
   useEffect(() => {
     if (isOpen) {
       // Reset state when modal opens
@@ -213,13 +170,10 @@ export default function CreatePostModal({
         { id: "1", text: "" },
         { id: "2", text: "" },
       ]);
-      setSelectedCompany(null);
       setMarketUrl("");
       setImportedMarket(initialMarket ?? null);
       setSelectedBowl(null);
       setBowlSearch("");
-      setCompanySearch("");
-      setSentiment("neutral");
       // Reset image dialog state
       setEditImageDialogOpen(false);
       setImageUrl("");
@@ -242,19 +196,6 @@ export default function CreatePostModal({
       if (bowl) setSelectedBowl(bowl);
     }
   }, [isOpen, initialBowlId, bowls]);
-
-  useEffect(() => {
-    if (isOpen && initialOrganizationId && organizations.length > 0) {
-      // Handle both string (MongoDB ObjectId) and numeric IDs
-      const org = organizations.find(
-        (o) =>
-          o.id === initialOrganizationId ||
-          o.id === Number(initialOrganizationId) ||
-          String(o.id) === String(initialOrganizationId)
-      );
-      if (org) setSelectedCompany(org);
-    }
-  }, [isOpen, initialOrganizationId, organizations]);
 
   // Common emojis for quick access
   const commonEmojis = [
@@ -486,11 +427,6 @@ export default function CreatePostModal({
         bowl.description.toLowerCase().includes(bowlSearch.toLowerCase())
     ) || [];
 
-  const filteredOrganizations =
-    organizations?.filter((org) =>
-      org.name.toLowerCase().includes(companySearch.toLowerCase())
-    ) || [];
-
   const addPollOption = () => {
     const newId = (pollOptions.length + 1).toString();
     setPollOptions([...pollOptions, { id: newId, text: "" }]);
@@ -526,10 +462,8 @@ export default function CreatePostModal({
         title,
         content,
         selectedBowl,
-        selectedCompany,
         postType,
         pollOptions,
-        sentiment,
         timestamp: new Date().toISOString(),
       };
 
@@ -542,12 +476,6 @@ export default function CreatePostModal({
         description: "Couldn't save your draft",
       });
     }
-  };
-
-  const handleCreateOrganization = (searchTerm: string) => {
-    if (!searchTerm?.trim()) return;
-    setOrganizationToCreate(searchTerm.trim());
-    setShowCreateOrganizationModal(true);
   };
 
   const handleImportMarket = async () => {
@@ -585,13 +513,6 @@ export default function CreatePostModal({
     } finally {
       setIsImportingMarket(false);
     }
-  };
-
-  const handleOrganizationCreated = (organization: Organization) => {
-    setSelectedCompany(organization);
-    setShowCompanySearch(false);
-    setCompanySearch("");
-    queryClient.invalidateQueries({ queryKey: ["organizations"] });
   };
 
   const handlePost = async () => {
@@ -661,7 +582,6 @@ export default function CreatePostModal({
           options: pollOptions.map((opt) => opt.text),
           ...(selectedBowl && { community: selectedBowl.id }),
           ...(selectedBowl && { bowl: selectedBowl.id }),
-          ...(selectedCompany && { company: selectedCompany.id }),
           ...(attachedMarketMongoId && { attachedMarket: attachedMarketMongoId }),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         };
@@ -674,12 +594,11 @@ export default function CreatePostModal({
           htmlContent: content,
           ...(selectedBowl && { community: selectedBowl.id }),
           ...(selectedBowl && { bowl: selectedBowl.id }),
-          companyTags: selectedCompany ? [selectedCompany.id] : [],
           ...(attachedMarketMongoId && { attachedMarket: attachedMarketMongoId }),
           type: "text",
           mediaUrl: "",
           linkUrl: "",
-          bias: sentiment || "neutral",
+          bias: "neutral",
         };
         // Await the mutation to ensure it completes before invalidating queries
         await mutation.mutateAsync(postData);
@@ -693,7 +612,7 @@ export default function CreatePostModal({
             (key[0] === "posts" ||
               key[0] === "/api/posts" ||
               key[0] === "bowl-posts" ||
-              key[0] === "organization-posts")
+              key[0] === "community-posts")
           );
         },
       });
@@ -710,10 +629,8 @@ export default function CreatePostModal({
       setTitle("");
       setContent("");
       setSelectedBowl(null);
-      setSelectedCompany(null);
       setMarketUrl("");
       setImportedMarket(null);
-      setSentiment("neutral");
       setPollOptions([
         { id: "1", text: "" },
         { id: "2", text: "" },
@@ -1128,89 +1045,6 @@ export default function CreatePostModal({
 
             {postType === "text" && (
               <div className="border-t border-[#525252]/30 p-6 space-y-6">
-                {/* Sentiment Selector - Only show when company is selected */}
-                {selectedCompany && (
-                  <div className="flex items-center gap-9">
-                    <span className="text-[#525252] transition-colors text-xs whitespace-nowrap">
-                      POST TYPE
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setSentiment("positive")}
-                        className={`px-4 py-2 text-xs font-medium transition-colors border-[0.2px] ${
-                          sentiment === "positive"
-                            ? "bg-green-500/20 border-green-500/50 text-green-400"
-                            : "bg-[rgba(234,234,234,0.04)] border-[#525252]/30 text-[#525252] hover:border-[#525252]/50 hover:text-[#8E8E93]"
-                        }`}
-                      >
-                        POSITIVE
-                      </button>
-                      <button
-                        onClick={() => setSentiment("neutral")}
-                        className={`px-4 py-2 text-xs font-medium transition-colors border-[0.2px] ${
-                          sentiment === "neutral"
-                            ? "bg-gray-500/20 border-gray-500/50 text-gray-400"
-                            : "bg-[rgba(234,234,234,0.04)] border-[#525252]/30 text-[#525252] hover:border-[#525252]/50 hover:text-[#8E8E93]"
-                        }`}
-                      >
-                        NEUTRAL
-                      </button>
-                      <button
-                        onClick={() => setSentiment("negative")}
-                        className={`px-4 py-2 text-xs font-medium transition-colors border-[0.2px] ${
-                          sentiment === "negative"
-                            ? "bg-red-500/20 border-red-500/50 text-red-400"
-                            : "bg-[rgba(234,234,234,0.04)] border-[#525252]/30 text-[#525252] hover:border-[#525252]/50 hover:text-[#8E8E93]"
-                        }`}
-                      >
-                        NEGATIVE
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Display selected company tag */}
-                <div className="flex items-center gap-9">
-                  <span className="text-[#525252] transition-colors text-xs">
-                    TAG A COMPANY
-                  </span>
-                  <button
-                    onClick={() => setShowCompanySearch(true)}
-                    className="w-2/4 text-left  flex border-[0.2px] border-[#525252]/30"
-                  >
-                    <div className="flex-1 text-[#525252] px-9 py-4">
-                      abstract...
-                    </div>
-                    <div className="bg-[#373737] text-[#E8EAE9] px-6 flex justify-center items-center">
-                      <SvgIcon src="/icons/Search icon.svg" />
-                    </div>
-                  </button>
-                </div>
-
-                {selectedCompany && (
-                  <div className="border-[0.2px] border-[#525252]/30 p-6 mt-4 w-fit">
-                    <div className="flex items-center gap-6">
-                      <div className="flex items-center gap-4">
-                        <img 
-                          src={selectedCompany.logo || CompanyIcon} 
-                          alt="Company icon" 
-                          className="w-5 h-5 object-contain" 
-                        />
-                        <span className="text-[#E8EAE9] text-xs font-medium">
-                          {selectedCompany.name}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => setSelectedCompany(null)}
-                        className="text-gray-400 hover:text-red-400 transition-colors"
-                        title="Remove company tag"
-                      >
-                        <img src={CloseIcon} alt="close" className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Quote flow: show embed preview (readonly). Normal flow: show URL import */}
                 {isQuoteFlow && importedMarket ? (
                   <div>
@@ -1356,101 +1190,6 @@ export default function CreatePostModal({
             </motion.div>
           )}
         </AnimatePresence>
-
-        <AnimatePresence>
-          {showCompanySearch && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/80 z-50 flex items-end"
-              onClick={() => setShowCompanySearch(false)}
-            >
-              <motion.div
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                exit={{ y: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="w-full bg-[#0a0a0a] rounded-t-2xl max-h-[70vh] flex flex-col border-t border-[#525252]/30"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="p-4 border-b border-[#525252]/30">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-[#E8EAE9] font-semibold">Tag Company</h3>
-                    <button
-                      onClick={() => setShowCompanySearch(false)}
-                      className="text-[#8E8E93] hover:text-[#E8EAE9] transition-colors"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search companies..."
-                    value={companySearch}
-                    onChange={(e) => setCompanySearch(e.target.value)}
-                    className="w-full bg-[rgba(234,234,234,0.04)] text-[#E8EAE9] px-3 py-2 rounded outline-none border border-[#525252]/30 focus:border-[#525252]/50"
-                  />
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  {filteredOrganizations.length > 0 ? (
-                    filteredOrganizations.map((org) => (
-                      <button
-                        key={org.id}
-                        onClick={() => {
-                          setSelectedCompany(org);
-                          setShowCompanySearch(false);
-                          setCompanySearch("");
-                        }}
-                        className="w-full flex items-center gap-3 p-4 hover:bg-[rgba(234,234,234,0.02)] transition-colors border-b border-[#525252]/30"
-                      >
-                        <div className="w-10 h-10 bg-[#1B1C20] rounded-full flex items-center justify-center border border-[#525252]/30">
-                          <Building className="w-5 h-5 text-[#E8EAE9]" />
-                        </div>
-                        <div className="text-left">
-                          <div className="text-[#E8EAE9] font-medium">
-                            {org.name}
-                          </div>
-                          <div className="text-[#8E8E93] text-sm">
-                            {org.description}
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  ) : companySearch.trim() ? (
-                    <button
-                      onClick={() => handleCreateOrganization(companySearch)}
-                      className="w-full flex items-center gap-3 p-4 hover:bg-[rgba(234,234,234,0.02)] transition-colors border-b border-[#525252]/30"
-                    >
-                      <div className="w-10 h-10 bg-[#1B1C20] rounded-full flex items-center justify-center border border-[#525252]/30">
-                        <Plus className="w-5 h-5 text-[#E8EAE9]" />
-                      </div>
-                      <div className="text-left">
-                        <div className="text-[#E8EAE9] font-medium">
-                          Create "{companySearch}"
-                        </div>
-                        <div className="text-[#8E8E93] text-sm">
-                          Add as new organization
-                        </div>
-                      </div>
-                    </button>
-                  ) : (
-                    <div className="p-8 text-center text-[#8E8E93]">
-                      No companies found
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <CreateOrganizationModal
-          isOpen={showCreateOrganizationModal}
-          onClose={() => setShowCreateOrganizationModal(false)}
-          organizationName={organizationToCreate}
-          onOrganizationCreated={handleOrganizationCreated}
-        />
 
         {/* Image Edit Dialog */}
         <Dialog open={editImageDialogOpen} onOpenChange={setEditImageDialogOpen}>

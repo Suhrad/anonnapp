@@ -210,6 +210,24 @@ export default function RightSidebar({
         responseData?.data?.user || responseData?.user || responseData;
       setDbProfile(updatedUser);
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey;
+          return (
+            Array.isArray(key) &&
+            (
+              key[0] === "posts" ||
+              key[0] === "/api/posts" ||
+              key[0] === "polls" ||
+              key[0] === "/api/polls" ||
+              key[0] === "poll" ||
+              key[0] === "comments" ||
+              key[0] === "/api/users" ||
+              key[0] === "user-profile-stats"
+            )
+          );
+        },
+      });
 
       // Refresh profile in auth context
       await refreshProfile();

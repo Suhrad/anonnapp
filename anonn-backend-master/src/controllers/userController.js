@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import Post from '../models/Post.js';
 import Poll from '../models/Poll.js';
 import Comment from '../models/Comment.js';
+import AnonymousProfile from '../models/AnonymousProfile.js';
 import mongoose from 'mongoose';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { createPointEvent } from '../utils/points.js';
@@ -29,15 +30,11 @@ const findUserByIdOrUsername = async (idOrUsername) => {
 export const getUserProfile = async (req, res, next) => {
     try {
         const { id } = req.params;
-
-        // Check if id is a valid MongoDB ObjectId or a username
         const isValidObjectId = mongoose.Types.ObjectId.isValid(id);
+        const query = isValidObjectId ? { $or: [{ _id: id }, { anonymousId: id }] } : { username: id };
 
-        // Query by _id if valid ObjectId, otherwise query by username
-        const query = isValidObjectId ? { _id: id } : { username: id };
-
-        const user = await User.findOne(query)
-            .select('-password')
+        const user = await AnonymousProfile.findOne(query)
+            .select('-encryptionPublicKey')
             .populate('joinedCommunities', 'name displayName avatar memberCount')
             .populate('joinedBowls', 'name displayName icon memberCount');
 
@@ -45,10 +42,9 @@ export const getUserProfile = async (req, res, next) => {
             return errorResponse(res, 404, 'User not found');
         }
 
-        // Get counts
-        const postCount = await Post.countDocuments({ author: user._id, isActive: true });
-        const pollCount = await Poll.countDocuments({ author: user._id, isActive: true });
-        const commentCount = await Comment.countDocuments({ author: user._id, isActive: true });
+        const postCount = await Post.countDocuments({ anonAuthorId: user.anonymousId, isActive: true });
+        const pollCount = await Poll.countDocuments({ anonAuthorId: user.anonymousId, isActive: true });
+        const commentCount = await Comment.countDocuments({ anonAuthorId: user.anonymousId, isActive: true });
 
         const userProfile = {
             ...user.toObject(),
@@ -56,8 +52,8 @@ export const getUserProfile = async (req, res, next) => {
                 posts: postCount,
                 polls: pollCount,
                 comments: commentCount,
-                followers: user.followers.length,
-                following: user.following.length,
+                followers: 0,
+                following: 0,
                 communities: user.joinedCommunities.length,
                 bowls: user.joinedBowls.length,
             },
@@ -117,18 +113,29 @@ export const updateMyProfile = async (req, res, next) => {
         const { username, bio, avatar, notificationSettings } = req.body;
 
         const updates = {};
-        if (username) updates.username = username;
+        if (username !== undefined) updates.username = username;
         if (bio !== undefined) updates.bio = bio;
         if (avatar !== undefined) updates.avatar = avatar;
         if (notificationSettings !== undefined) {
             updates.notificationSettings = notificationSettings;
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user._id, // Use authenticated user's ID
+        if (username) {
+            const existingProfile = await AnonymousProfile.findOne({
+                username,
+                anonymousId: { $ne: req.anonymousId },
+            });
+
+            if (existingProfile) {
+                return errorResponse(res, 400, 'Username already taken');
+            }
+        }
+
+        const user = await AnonymousProfile.findOneAndUpdate(
+            { anonymousId: req.anonymousId },
             updates,
             { new: true, runValidators: true }
-        ).select('-password');
+        ).select('-encryptionPublicKey');
 
         if (!user) {
             return errorResponse(res, 404, 'User not found');
@@ -438,7 +445,7 @@ export const getBookmarks = async (req, res, next) => {
  */
 export const getUserBowls = async (req, res, next) => {
     try {
-        const user = await User.findById(req.user._id)
+        const user = await AnonymousProfile.findOne({ anonymousId: req.anonymousId })
             .populate('joinedBowls', 'name displayName description icon memberCount postCount');
 
         if (!user) {

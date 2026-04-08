@@ -15,7 +15,6 @@ import {
   Building,
   Camera,
   Code,
-  Image,
   Italic,
   Link as LinkIcon,
   List,
@@ -28,7 +27,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { apiCall } from "@/lib/api";
 import CloseIcon from "@/icons/x-close.svg";
 import BackIcon from "@/icons/Arrow-left.svg";
@@ -80,6 +78,15 @@ const insertEmoji = (emoji: string) => {
   formatText("insertText", emoji);
 };
 
+const stripImagesFromHtml = (html: string) => {
+  if (!html) return "";
+
+  const container = document.createElement("div");
+  container.innerHTML = html;
+  container.querySelectorAll("img").forEach((img) => img.remove());
+  return container.innerHTML;
+};
+
 interface CreatePostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -118,14 +125,6 @@ export default function CreatePostModal({
   const [bowlSearch, setBowlSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  
-  // Image edit dialog state
-  const [editImageDialogOpen, setEditImageDialogOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string>("");
-  const [uploadMode, setUploadMode] = useState<"file" | "url">("file");
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const contentEditableRef = useRef<HTMLDivElement>(null);
 
@@ -174,12 +173,6 @@ export default function CreatePostModal({
       setImportedMarket(initialMarket ?? null);
       setSelectedBowl(null);
       setBowlSearch("");
-      // Reset image dialog state
-      setEditImageDialogOpen(false);
-      setImageUrl("");
-      setSelectedFile(null);
-      setImagePreview("");
-      setUploadMode("file");
 
       // Apply initial props if provided
       if (initialType && ["text", "poll"].includes(initialType)) {
@@ -214,209 +207,6 @@ export default function CreatePostModal({
   const handleContentChange = () => {
     if (contentEditableRef.current) {
       setContent(contentEditableRef.current.innerHTML);
-    }
-  };
-
-  // Handle image edit dialog open
-  const handleImageEdit = () => {
-    setImageUrl("");
-    setSelectedFile(null);
-    setImagePreview("");
-    setUploadMode("file");
-    setEditImageDialogOpen(true);
-  };
-
-  // Helper function to process a file (used by both file select and paste)
-  const processImageFile = useCallback((file: File) => {
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast.error("Invalid file type", {
-        description: "Please select an image file",
-      });
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File too large", {
-        description: "Please select an image smaller than 5MB",
-      });
-      return;
-    }
-
-    setSelectedFile(file);
-    setImageUrl(""); // Clear URL when file is selected
-    setUploadMode("file"); // Switch to file mode
-
-    // Create preview
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, []);
-
-  // Handle file selection
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    processImageFile(file);
-  };
-
-  // Handle paste event for images
-  const handlePaste = useCallback(async (e: Event) => {
-    const clipboardEvent = e as ClipboardEvent;
-    // Only handle paste when the image edit dialog is open
-    if (!editImageDialogOpen) return;
-
-    const items = clipboardEvent.clipboardData?.items;
-    if (!items) return;
-
-    // Look for image items in clipboard
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      
-      // Check if the item is an image
-      if (item.type.startsWith("image/")) {
-        clipboardEvent.preventDefault();
-        clipboardEvent.stopPropagation();
-
-        // Get the file from clipboard
-        const file = item.getAsFile();
-        if (file) {
-          processImageFile(file);
-          toast.success("Image pasted!", {
-            description: "Image has been pasted. Click 'Insert Image' to add it.",
-          });
-        }
-        return;
-      }
-    }
-  }, [editImageDialogOpen, processImageFile]);
-
-  // Add paste event listener when image edit dialog is open
-  useEffect(() => {
-    if (editImageDialogOpen) {
-      window.addEventListener("paste", handlePaste);
-      return () => {
-        window.removeEventListener("paste", handlePaste);
-      };
-    }
-  }, [editImageDialogOpen, handlePaste]);
-
-  // Insert image into content editable
-  const insertImageIntoContent = (url: string) => {
-    if (!contentEditableRef.current) return;
-    
-    // Focus the content editable area first
-    contentEditableRef.current.focus();
-    
-    // Insert image at cursor position
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      const img = document.createElement("img");
-      img.src = url;
-      img.style.maxWidth = "100%";
-      img.style.height = "auto";
-      img.style.display = "block";
-      img.style.margin = "8px 0";
-      range.insertNode(img);
-      // Move cursor after the image
-      range.setStartAfter(img);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    } else {
-      // Fallback: append to end
-      const img = document.createElement("img");
-      img.src = url;
-      img.style.maxWidth = "100%";
-      img.style.height = "auto";
-      img.style.display = "block";
-      img.style.margin = "8px 0";
-      contentEditableRef.current.appendChild(img);
-      // Move cursor after the image
-      const range = document.createRange();
-      range.setStartAfter(img);
-      range.collapse(true);
-      const sel = window.getSelection();
-      if (sel) {
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-    }
-    
-    // Update content state
-    handleContentChange();
-  };
-
-  // Submit image edit
-  const submitImageEdit = async () => {
-    if (uploadMode === "file") {
-      // File upload mode
-      if (!selectedFile) {
-        toast.warning("No file selected", {
-          description: "Please select an image file to upload",
-        });
-        return;
-      }
-
-      setIsUploadingImage(true);
-      try {
-        // Upload to Cloudinary
-        const uploadedUrl = await uploadImageToCloudinary(
-          selectedFile,
-          "post-images"
-        );
-
-        // Insert image into content
-        insertImageIntoContent(uploadedUrl);
-
-        setSelectedFile(null);
-        setImagePreview("");
-        setEditImageDialogOpen(false);
-        
-        toast.success("Image uploaded!", {
-          description: "Image has been added to your post",
-        });
-      } catch (error) {
-        console.error("[CreatePost] Image upload error:", error);
-        toast.error("Upload failed", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "Failed to upload image. Please try again.",
-        });
-      } finally {
-        setIsUploadingImage(false);
-      }
-    } else {
-      // URL input mode
-      if (!imageUrl.trim()) {
-        toast.warning("Image URL required", {
-          description: "Please enter a valid image URL",
-        });
-        return;
-      }
-
-      // Validate URL format
-      try {
-        new URL(imageUrl);
-      } catch (error) {
-        toast.error("Invalid URL", {
-          description: "Please enter a valid image URL",
-        });
-        return;
-      }
-
-      // Insert image into content
-      insertImageIntoContent(imageUrl.trim());
-      setEditImageDialogOpen(false);
-      
-      toast.success("Image added!", {
-        description: "Image has been added to your post",
-      });
     }
   };
 
@@ -534,8 +324,12 @@ export default function CreatePostModal({
 
     try {
       // For rich text content, we need to handle HTML properly
-      const postContent =
-        content.trim() || contentEditableRef.current?.innerText || "";
+      const sanitizedHtmlContent = stripImagesFromHtml(
+        contentEditableRef.current?.innerHTML || content || ""
+      );
+      const contentContainer = document.createElement("div");
+      contentContainer.innerHTML = sanitizedHtmlContent;
+      const postContent = contentContainer.textContent?.trim() || "";
 
       // If a market is attached, ensure it has a valid MongoDB ObjectId.
       // Markets from Supabase/quote flow have a Polymarket hex ID, not a Mongo ID —
@@ -591,7 +385,7 @@ export default function CreatePostModal({
         const postData = {
           title: title.trim(),
           content: postContent,
-          htmlContent: content,
+          htmlContent: sanitizedHtmlContent,
           ...(selectedBowl && { community: selectedBowl.id }),
           ...(selectedBowl && { bowl: selectedBowl.id }),
           ...(attachedMarketMongoId && { attachedMarket: attachedMarketMongoId }),
@@ -879,20 +673,13 @@ export default function CreatePostModal({
                       <Quote className="w-4 h-4" />
                     </button>
 
-                    {/* Link & Image */}
+                    {/* Link */}
                     <button
                       onClick={createLink}
                       className="text-gray-400 hover:text-white transition-colors p-2 rounded hover:bg-gray-700"
                       title="Insert Link"
                     >
                       <LinkIcon className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={handleImageEdit}
-                      className="text-gray-400 hover:text-white transition-colors p-2 rounded hover:bg-gray-700"
-                      title="Insert Image"
-                    >
-                      <Image className="w-4 h-4" />
                     </button>
 
                     {/* Text Alignment */}
@@ -1201,146 +988,6 @@ export default function CreatePostModal({
           )}
         </AnimatePresence>
 
-        {/* Image Edit Dialog */}
-        <Dialog open={editImageDialogOpen} onOpenChange={setEditImageDialogOpen}>
-          <DialogContent className="sm:max-w-md border-0 shadow-2xl bg-black border-gray-700">
-            <DialogHeader className="text-center pb-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#a8d5e2] to-[#b3d9e6] rounded-2xl mb-4">
-                <Camera className="h-8 w-8 text-gray-900" />
-              </div>
-              <DialogTitle className="text-2xl font-bold text-white">
-                Insert Image
-              </DialogTitle>
-              <p className="text-sm text-gray-400 mt-2">
-                Upload an image, paste from clipboard, or enter a URL
-              </p>
-            </DialogHeader>
-            <div className="space-y-4">
-              {/* Upload Mode Toggle */}
-              <div className="flex gap-2 p-1 bg-gray-900 rounded-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadMode("file");
-                    setImageUrl("");
-                  }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    uploadMode === "file"
-                      ? "bg-[#a8d5e2] text-gray-900"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Upload File
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadMode("url");
-                    setSelectedFile(null);
-                    setImagePreview("");
-                  }}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    uploadMode === "url"
-                      ? "bg-[#a8d5e2] text-gray-900"
-                      : "text-gray-400 hover:text-white"
-                  }`}
-                >
-                  Enter URL
-                </button>
-              </div>
-
-              {uploadMode === "file" ? (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
-                    Select Image
-                  </label>
-                  <div className="border-2 border-dashed border-gray-600 rounded-xl p-6 text-center hover:border-[#a8d5e2] transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="post-image-upload"
-                      disabled={isUploadingImage}
-                    />
-                    <label
-                      htmlFor="post-image-upload"
-                      className="cursor-pointer flex flex-col items-center gap-2"
-                    >
-                      <Camera className="h-8 w-8 text-gray-400" />
-                      <span className="text-sm text-gray-400">
-                        Click to select, drag and drop, or paste (Ctrl+V)
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        PNG, JPG up to 5MB
-                      </span>
-                    </label>
-                  </div>
-                  {imagePreview && (
-                    <div className="flex justify-center mt-4">
-                      <div className="w-32 h-32 border border-gray-600 rounded overflow-hidden">
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-300">
-                    Image URL
-                  </label>
-                  <Input
-                    placeholder="https://example.com/image.jpg"
-                    value={imageUrl}
-                    onChange={(e) => setImageUrl(e.target.value)}
-                    className="rounded-xl border-gray-600 bg-gray-900 text-white focus:border-[#a8d5e2] focus:ring-[#a8d5e2]/20 h-12"
-                    disabled={isUploadingImage}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Enter a direct link to your image
-                  </p>
-                  {imageUrl && (
-                    <div className="flex justify-center mt-4">
-                      <div className="w-20 h-20 border border-gray-600 rounded overflow-hidden">
-                        <img
-                          src={imageUrl}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            <DialogFooter className="pt-6">
-              <Button
-                disabled={isUploadingImage || (uploadMode === "file" && !selectedFile) || (uploadMode === "url" && !imageUrl.trim())}
-                onClick={submitImageEdit}
-                className="w-full h-12 bg-gradient-to-r from-[#a8d5e2] to-[#b3d9e6] text-gray-900 font-bold rounded-xl disabled:opacity-50 shadow-lg hover:from-[#9bc8d5] hover:to-[#a6ccd9]"
-              >
-                {isUploadingImage ? (
-                  <span className="flex items-center gap-3">
-                    <div className="w-5 h-5 border-2 border-gray-900/30 border-t-gray-900 rounded-full animate-spin"></div>
-                    Uploading...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Insert Image
-                    <Image className="h-4 w-4" />
-                  </span>
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
       </DialogContent>
     </Dialog>
   );

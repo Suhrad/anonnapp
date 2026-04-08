@@ -93,6 +93,8 @@ export default function RightSidebar({
   const [selectedFile, setSelectedFile] = useState<File | null>(null); // For file upload
   const [imagePreview, setImagePreview] = useState<string>(""); // For preview
   const [uploadMode, setUploadMode] = useState<"file" | "url">("file"); // Upload mode toggle
+  const profileAvatar = dbProfile?.avatar || user?.avatar || DEFAULT_PROFILE_PICTURE;
+  const profileUsername = dbProfile?.username || user?.username || "Anonymous";
 
   // const [showHot, setShowHot] = useState(!isMobile); // Auto-collapse hot section on mobile
   // Auto-authenticate if wallet is connected and token exists but not authenticated
@@ -203,8 +205,11 @@ export default function RightSidebar({
         throw new Error(errorMessage);
       }
 
-      const updatedUser = await response.json();
+      const responseData = await response.json();
+      const updatedUser =
+        responseData?.data?.user || responseData?.user || responseData;
       setDbProfile(updatedUser);
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
 
       // Refresh profile in auth context
       await refreshProfile();
@@ -245,7 +250,7 @@ export default function RightSidebar({
 
   // Handle username edit specifically
   const handleUsernameEdit = () => {
-    setNewUsername(user?.username || "");
+    setNewUsername(profileUsername);
     setEditUsernameDialogOpen(true);
   };
 
@@ -257,7 +262,7 @@ export default function RightSidebar({
 
   // Handle profile image edit
   const handleImageEdit = () => {
-    setImageUrl(user?.avatar || "");
+    setImageUrl(profileAvatar === DEFAULT_PROFILE_PICTURE ? "" : profileAvatar);
     setSelectedFile(null);
     setImagePreview("");
     setUploadMode("file");
@@ -722,14 +727,11 @@ export default function RightSidebar({
               <div className="relative h-[218px] mx-auto">
                 <Avatar className="w-full h-full rounded-none">
                   <AvatarImage
-                    src={
-                      user?.avatar ||
-                      DEFAULT_PROFILE_PICTURE
-                    }
+                    src={profileAvatar}
                     className="object-cover"
                   />
                   <AvatarFallback className="bg-gray-800 text-white font-bold text-4xl rounded-none">
-                    {user?.username?.charAt(0).toUpperCase() || "U"}
+                    {profileUsername.charAt(0).toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
                 {/* Edit Icon on Image - Fixed to open image edit dialog */}
@@ -750,7 +752,7 @@ export default function RightSidebar({
                 </div>
                 <div className="flex items-center justify-between py-5">
                   <span className="text-[#8E8E93] underline text-xs font-medium">
-                    {user?.username || "Anonymous"}
+                    {profileUsername}
                   </span>
                   <button
                     onClick={handleUsernameEdit}

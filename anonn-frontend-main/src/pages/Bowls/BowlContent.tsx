@@ -6,7 +6,6 @@ import { useApiMutation } from "@/hooks/useApiMutation";
 import { useApiQuery } from "@/hooks/useApiQuery";
 import { useAuth } from "@/hooks/useAuth";
 import { apiCall } from "@/lib/api";
-import { DEFAULT_PROFILE_PICTURE } from "@/lib/anonymity";
 import type { BowlWithDetails, PostWithDetails } from "@/types";
 import { MessageSquare, Minus, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -347,25 +346,6 @@ export default function BowlContent() {
                 {bowl?.description || ""}
               </p>
 
-              {/* Admin Section */}
-              <div>
-                <div className="text-[#E8EAE9] text-xs font-medium mb-6 uppercase">
-                  ADMIN
-                </div>
-                <div className="flex flex-col items-start gap-2 border border-[#525252]/30 w-fit py-5 px-6">
-                  <div className="w-16 h-16">
-                    <img
-                      src={bowl.creator?.avatar || DEFAULT_PROFILE_PICTURE}
-                      alt={bowl.creator?.username || "Unknown admin"}
-                      className="w-full h-full object-cover rounded"
-                    />
-                  </div>
-                  <span className="text-[#8E8E93] text-xs">
-                    {bowl.creator?.username || "Unknown admin"}
-                  </span>
-                </div>
-              </div>
-
               {/* TOP CONTENT Section */}
               <div>
                 <div className="text-[#E8EAE9] text-xs font-medium mb-4 uppercase">
@@ -499,4 +479,3 @@ export default function BowlContent() {
     </div>
   );
 }
-

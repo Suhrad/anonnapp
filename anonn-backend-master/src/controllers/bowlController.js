@@ -1,6 +1,7 @@
 import Bowl from '../models/Bowl.js';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import AnonymousProfile from '../models/AnonymousProfile.js';
 import { successResponse, errorResponse, paginatedResponse } from '../utils/response.js';
 
 /**
@@ -99,6 +100,11 @@ export const joinBowl = async (req, res, next) => {
             $addToSet: { joinedBowls: req.params.id }
         });
 
+        await AnonymousProfile.findOneAndUpdate(
+            { anonymousId: req.anonymousId },
+            { $addToSet: { joinedBowls: req.params.id } }
+        );
+
         return successResponse(res, 200, {}, 'Joined bowl');
     } catch (error) {
         next(error);
@@ -122,6 +128,11 @@ export const leaveBowl = async (req, res, next) => {
         await User.findByIdAndUpdate(req.user._id, {
             $pull: { joinedBowls: req.params.id }
         });
+
+        await AnonymousProfile.findOneAndUpdate(
+            { anonymousId: req.anonymousId },
+            { $pull: { joinedBowls: req.params.id } }
+        );
 
         return successResponse(res, 200, {}, 'Left bowl');
     } catch (error) {

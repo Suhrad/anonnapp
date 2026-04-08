@@ -617,7 +617,7 @@ export default function LeftSidebar() {
             {(hotPostsData?.posts || []).map((post) => (
               <Link
                 key={post.id || post._id}
-                href={`/posts/${post.id || post._id}`}
+                href={`/post?id=${post._id || post.id}`}
                 className="block font-spacemono px-4 py-3 text-sm underline text-[#8E8E93] hover:text-gray-300 hover:bg-[#252525] rounded transition-all duration-200 cursor-pointer"
               >
                 {post.title}
